@@ -224,6 +224,7 @@ static std::vector<std::shared_ptr<docview::extension>> loaded_c_extensions;
 // All root nodes loaded till now, with the extension loaded it
 std::vector<std::pair<const docview::doc_tree_node*, docview::extension*>> root_nodes;
 
+// Converts a string to a dynamically allocated char array
 const char* c_str(const std::string& string)
 {
     char* str = new char[string.size() + 1];
@@ -253,16 +254,38 @@ docview::extension* get_extension(const docview::doc_tree_node* node)
     return ext;
 }
 
+// Searchs through given node and child nodes of given node
 std::vector<const docview::doc_tree_node*> search_node(const docview::doc_tree_node* node, std::string query)
 {
+
+    // Matches found
     std::vector<const docview::doc_tree_node*> matches;
 
+    // Check if the title or any of synonyms start with the value of query, on true, add the node to matches
+    if (node->title.substr(0, query.size()) == query)
+    {
+        matches.push_back(node);
+    }
+    else
+    {
+        for (auto& synonym : node->synonyms)
+        {
+            if (synonym.substr(0, query.size()) == query)
+            {
+                matches.push_back(node);
+                break;
+            }
+        }
+    }
+
+    // Do the same for all children
     for (auto& child_node : node->children)
     {
         std::vector<const docview::doc_tree_node*> found_matches = search_node(child_node, query);
         matches.insert(matches.end(), found_matches.begin(), found_matches.end());
     }
 
+    // Return the result
     return matches;
 }
 
@@ -334,7 +357,10 @@ namespace docview
                 throw std::runtime_error(std::string(path) + "isn't a valid extension");
             }
 
+            // Add it to loaded_c_extensions
             loaded_c_extensions.push_back(c_ext);
+
+            // Set the extension variable
             extension = c_ext.get();
         }
 
@@ -401,32 +427,29 @@ namespace docview
 
     std::pair<std::string, bool> get_doc(const doc_tree_node* node)
     {
-        docview::extension* ext = get_extension(node);
-        return ext->get_doc(node);
+        return get_extension(node)->get_doc(node);
     }
 
     std::string get_brief(const doc_tree_node* node)
     {
-        docview::extension* ext = get_extension(node);
-        return ext->get_brief(node);
+        return get_extension(node)->get_brief(node);
     }
 
     std::string get_details(const doc_tree_node* node)
     {
-        docview::extension* ext = get_extension(node);
-        return ext->get_details(node);
+        return get_extension(node)->get_details(node);
     }
     
     std::string get_section(const doc_tree_node* node, std::string section)
     {
-        docview::extension* ext = get_extension(node);
-        return ext->get_section(node, section);
+        return get_extension(node)->get_section(node, section);
     }
 
     std::vector<const doc_tree_node*> search(std::string query)
     {
         std::vector<const doc_tree_node*> matches;
 
+        // Search through all root nodes and their children
         for (auto& root_node : root_nodes)
         {
             std::vector<const doc_tree_node*> found_matches = search_node(root_node.first, query);
@@ -465,13 +488,19 @@ const char* docview_get_section(docview_doc_tree_node* node, const char* section
 
 const docview_doc_tree_node* const* docview_search(const char* query)
 {
+
+    // Call the C++ function
     auto result = docview::search(query);
+
+    // Allocate memory for the array
     const docview_doc_tree_node** return_value =
         (const docview_doc_tree_node**)new docview_doc_tree_node*[result.size() + 1];
 
+    // Copy search results from vector to array
     for (unsigned long i = 0; i < result.size(); i++)
         return_value[i] = (docview_doc_tree_node*)result[i];
-    
+
+    // Terminate the array with a NULL or nullptr
     return_value[result.size()] = nullptr;
     
     return return_value;
@@ -489,11 +518,15 @@ const char* docview_doc_tree_node_title(docview_doc_tree_node* node)
 
 const char* const* docview_doc_tree_node_synonyms(docview_doc_tree_node* node)
 {
+
+    // Dynamically allocate for the array
     const char** synonyms = new const char*[((docview::doc_tree_node*)node)->synonyms.size() + 1];
-    
+
+    // Copy strings to new array
     for (unsigned long i = 0; i < ((docview::doc_tree_node*)node)->synonyms.size(); i++)
         synonyms[i] = c_str(((docview::doc_tree_node*)node)->synonyms[i]);
-    
+
+    // Terminate the array with a NULL or nullptr
     synonyms[((docview::doc_tree_node*)node)->synonyms.size()] = nullptr;
 
     return synonyms;
@@ -501,21 +534,27 @@ const char* const* docview_doc_tree_node_synonyms(docview_doc_tree_node* node)
 
 const docview_doc_tree_node* const* docview_doc_tree_node_children(docview_doc_tree_node* node)
 {
+
+    // Dynamically allocate for the array
     const docview_doc_tree_node** children = (const docview_doc_tree_node**)new docview_doc_tree_node*[
         ((docview::doc_tree_node*)node)->children.size() + 1
     ];
 
+    // Copy nodes to new array
     for (unsigned long i = 0; i < ((docview::doc_tree_node*)node)->children.size(); i++)
         children[i] = (docview_doc_tree_node*)((docview::doc_tree_node*)node)->children[i];
-    
+
+    // Terminate the array with a NULL or nullptr
     children[((docview::doc_tree_node*)node)->children.size()] = nullptr;
     
     return children;
 }
 
+// The constructor and destructor, does nothing
 docview::extension::extension() {}
 docview::extension::~extension() {}
 
+// Default virtual methods of docview::extension
 std::string docview::extension::get_brief(const docview::doc_tree_node*) noexcept
 {
     return std::string();
