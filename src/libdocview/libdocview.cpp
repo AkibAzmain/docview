@@ -228,7 +228,7 @@ std::vector<std::pair<const docview::doc_tree_node*, docview::extension*>> root_
 const char* c_str(const std::string& string)
 {
     char* str = new char[string.size() + 1];
-    memcpy(str, string.data(), string.size());
+    std::memcpy(str, string.data(), string.size());
     return str;
 }
 
