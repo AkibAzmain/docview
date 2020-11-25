@@ -1,21 +1,32 @@
-bin_PROGRAMS         =      docview
+assetsdir			 =		$(datarootdir)/docview
 
-docview_SOURCES      =      docview.cpp
+bin_PROGRAMS		 =		docview
+assets_HEADERS		 =		window.ui
 
-docview_CPPFLAGS     =      -Wall -Wextra -pedantic
+docview_SOURCES		 =		docview.cpp
 
-docview_CPPFLAGS    +=      $(gtkmm_CFLAGS)
-docview_CPPFLAGS    +=      $(webkit2gtk_CFLAGS)
-docview_CPPFLAGS    +=      $(gtkmm_CFLAGS)
-docview_CPPFLAGS    +=      $(gtk_CFLAGS)
-docview_CPPFLAGS    +=      $(glibmm_CFLAGS)
-docview_CPPFLAGS    +=      $(glib_CFLAGS)
-docview_CPPFLAGS    +=      $(webkit2gtk_CFLAGS)
+docview_CPPFLAGS	 =		-Wall -Wextra -pedantic
+docview_CPPFLAGS	+=		-std=c++17
+docview_CPPFLAGS	+=		-Ilibdocview
+docview_CPPFLAGS	+=		-DASSETS_DIR=\"$(assetsdir)\"
 
-docview_LDADD        =      $(gtkmm_LIBS)
-docview_LDADD       +=      $(webkit2gtk_LIBS)
-docview_LDADD       +=      $(gtkmm_LIBS)
-docview_LDADD       +=      $(gtk_LIBS)
-docview_LDADD       +=      $(glibmm_LIBS)
-docview_LDADD       +=      $(glib_LIBS)
-docview_LDADD       +=      $(webkit2gtk_LIBS)
+docview_LDADD		 =		libdocview/libdocview.la
+
+docview_CPPFLAGS	+=		$(gtkmm_CFLAGS)
+docview_CPPFLAGS	+=		$(webkit2gtk_CFLAGS)
+docview_CPPFLAGS	+=		$(gtkmm_CFLAGS)
+docview_CPPFLAGS	+=		$(gtk_CFLAGS)
+docview_CPPFLAGS	+=		$(glibmm_CFLAGS)
+docview_CPPFLAGS	+=		$(glib_CFLAGS)
+docview_CPPFLAGS	+=		$(webkit2gtk_CFLAGS)
+
+docview_LDADD		+=		$(gtkmm_LIBS)
+docview_LDADD		+=		$(webkit2gtk_LIBS)
+docview_LDADD		+=		$(gtkmm_LIBS)
+docview_LDADD		+=		$(gtk_LIBS)
+docview_LDADD		+=		$(glibmm_LIBS)
+docview_LDADD		+=		$(glib_LIBS)
+docview_LDADD		+=		$(webkit2gtk_LIBS)
+
+libdocview/libdocview.la:
+	$(MAKE) -C libdocview/ all $(MAKEFLAGS)

@@ -31,6 +31,10 @@
 #include <filesystem>
 #include <utility>
 
+#if !defined(__cplusplus) || __cplusplus < 201703L
+#   error "Only C++17 and later supported, if you can't use C++17 or later, use the C bindings"
+#endif
+
 /**
  * @brief Namespace containing classes and function provided by libdocview
  * 

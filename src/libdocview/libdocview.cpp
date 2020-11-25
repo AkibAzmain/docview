@@ -19,7 +19,7 @@
 */
 
 #include <docview.hpp>
-#include <docview-c.h>
+#include <docview.h>
 
 #include <vector>
 #include <memory>
@@ -237,7 +237,7 @@ docview::extension* get_extension(const docview::doc_tree_node* node)
 {
 
     // Find the root of the node
-    const docview::doc_tree_node* root = node->parent;
+    const docview::doc_tree_node* root = node;
     while (root->parent)
         root = root->parent;
 
