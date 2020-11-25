@@ -2,7 +2,7 @@ bin_PROGRAMS         =      docview
 
 docview_SOURCES      =      docview.cpp
 
-docview_CPPFLAGS     =      -Wall -Wextra -Werror -pedantic -pedantic-errors
+docview_CPPFLAGS     =      -Wall -Wextra -pedantic
 
 docview_CPPFLAGS    +=      $(gtkmm_CFLAGS)
 docview_CPPFLAGS    +=      $(webkit2gtk_CFLAGS)
