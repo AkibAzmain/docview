@@ -7,7 +7,7 @@ docview_SOURCES		 =		docview.cpp
 
 docview_CPPFLAGS	 =		-Wall -Wextra -pedantic
 docview_CPPFLAGS	+=		-std=c++17
-docview_CPPFLAGS	+=		-Ilibdocview
+docview_CPPFLAGS	+=		-I$(top_srcdir)/src/libdocview
 docview_CPPFLAGS	+=		-DASSETS_DIR=\"$(assetsdir)\"
 
 docview_LDADD		 =		$(top_builddir)/src/libdocview/libdocview.la
