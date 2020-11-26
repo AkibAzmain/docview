@@ -34,6 +34,9 @@
 #include <gtkmm/label.h>
 #include <gtkmm/stack.h>
 #include <gtkmm/stackswitcher.h>
+#include <gtkmm/switch.h>
+#include <gtkmm/searchentry.h>
+#include <gtkmm/entrybuffer.h>
 #include <webkit2/webkit2.h>
 #include <glibmm/ustring.h>
 #include <glibmm/object.h>
@@ -112,9 +115,11 @@ int main(int argc, char** argv)
     auto history_next_button = get_widget<Gtk::Button>("history_next");
     auto new_tab_button = get_widget<Gtk::Button>("new_tab_button");
     auto close_tab_button = get_widget<Gtk::ModelButton>("close_tab_button");
+    auto search_entry = get_widget<Gtk::SearchEntry>("search_entry");
     auto title = get_widget<Gtk::Stack>("title");
     auto title_label = get_widget<Gtk::Label>("title_label");
     GObject* webview_settings = gtk_builder_get_object(builder->gobj(), "webview_settings");
+    auto preferences_use_system_fonts = get_widget<Gtk::Switch>("preferences_use_system_fonts");
 
     // This structure contains the contents of sidebar
     Glib::RefPtr<Gtk::TreeStore> sidebar_contents;
@@ -128,8 +133,28 @@ int main(int argc, char** argv)
     // This mapped array holds all tabs
     std::vector<Gtk::Widget*> tabs;
 
+    // Vector holding all root nodes provided by libdocview
+    std::vector<const docview::doc_tree_node*> document_root_nodes;
+
+    // Declare all lambda function
+    std::function<void()> on_sidebar_toggle_button_clicked;
+    std::function<void()> on_sidebar_resized;
+    std::function<void()> on_about_button_clicked;
+    std::function<void()> on_preferences_button_clicked;
+    std::function<void(const Gtk::TreeModel::Path&, Gtk::TreeView::Column*)> on_sidebar_option_selected;
+    void(*on_webview_load_change)(WebKitWebView*, WebKitLoadEvent, void*);
+    std::function<void()> on_title_changed;
+    std::function<void()> on_active_tab_changed;
+    std::function<void()> on_tab_added;
+    std::function<void()> on_tab_closed;
+    std::function<void()> on_history_previous;
+    std::function<void()> on_history_next;
+    std::function<void()> on_search_changed;
+    std::function<void()> on_quit_button_clicked;
+    std::function<void(const docview::doc_tree_node*, Gtk::TreeStore::iterator)> build_tree;
+
     // Lambda function to call on sidebar toggle button clicked
-    std::function<void()> on_sidebar_toggle_button_clicked = [&]() -> void
+    on_sidebar_toggle_button_clicked = [&]() -> void
     {
 
         // Used to store sidebar size
@@ -150,7 +175,7 @@ int main(int argc, char** argv)
     };
 
     // Lambda function to call on sidebar resized
-    std::function<void()> on_sidebar_resized = [&]() -> void
+    on_sidebar_resized = [&]() -> void
     {
 
         // If user tries resize sidebar to less than 200 pixels, set the size to 200 pixel
@@ -167,7 +192,7 @@ int main(int argc, char** argv)
     };
 
     // Lambda function to call on about button clicked
-    std::function<void()> on_about_button_clicked = [&]() -> void
+    on_about_button_clicked = [&]() -> void
     {
 
         // User wants to see the about dialog, present that
@@ -175,7 +200,7 @@ int main(int argc, char** argv)
     };
 
     // Lambda function to call on preferences button clicked
-    std::function<void()> on_preferences_button_clicked = [&]() -> void
+    on_preferences_button_clicked = [&]() -> void
     {
 
         // User want the preferences dialog dialog, present that
@@ -183,8 +208,7 @@ int main(int argc, char** argv)
     };
 
     // Lambda function to call on sidebar option selected
-    std::function<void(const Gtk::TreeModel::Path&, Gtk::TreeView::Column*)> on_sidebar_option_selected =
-        [&](const Gtk::TreeModel::Path& path, Gtk::TreeView::Column*) -> void
+    on_sidebar_option_selected = [&](const Gtk::TreeModel::Path& path, Gtk::TreeView::Column*) -> void
     {
 
         // Iterator to the row
@@ -204,8 +228,7 @@ int main(int argc, char** argv)
     };
 
     // Lambda function to call on webview load change
-    void(*on_webview_load_change)(WebKitWebView*, WebKitLoadEvent, void*) =
-        [](WebKitWebView* webview, WebKitLoadEvent event, void*) -> void
+    on_webview_load_change = [](WebKitWebView* webview, WebKitLoadEvent event, void*) -> void
     {
         auto title = ((Gtk::Stack*)Glib::wrap(GTK_WIDGET(webview))->get_parent())->child_property_title(
             *Glib::wrap(GTK_WIDGET(webview))
@@ -230,19 +253,19 @@ int main(int argc, char** argv)
     };
 
     // Lambda function to call on title changed
-    std::function<void()> on_title_changed = [&]()
+    on_title_changed = [&]() -> void
     {
         title_label->set_label(stack->child_property_title(*stack->get_visible_child()));
     };
 
     // Lambda function to call on active tab change
-    std::function<void()> on_active_tab_changed = [&]()
+    on_active_tab_changed = [&]() -> void
     {
         on_title_changed();
     };
 
     // Lambda function to call on tab added
-    std::function<void()> on_tab_added = [&]()
+    on_tab_added = [&]() -> void
     {
 
         // Tab number, automatically initialized with zero
@@ -280,7 +303,7 @@ int main(int argc, char** argv)
     };
 
     // Lambda function to call on tab closed
-    std::function<void()> on_tab_closed = [&]()
+    on_tab_closed = [&]() -> void
     {
 
         // If there will be no tabs left after removal, close the window
@@ -358,7 +381,7 @@ int main(int argc, char** argv)
     };
 
     // Lambda function to call on history previous button clicked
-    std::function<void()> on_history_previous = [&]()
+    on_history_previous = [&]() -> void
     {
         Gtk::Widget* webview = stack->get_visible_child();
         if (webkit_web_view_can_go_back(WEBKIT_WEB_VIEW(webview->gobj())))
@@ -366,15 +389,50 @@ int main(int argc, char** argv)
     };
 
     // Lambda function to call on history next button clicked
-    std::function<void()> on_history_next = [&]()
+    on_history_next = [&]() -> void
     {
         Gtk::Widget* webview = stack->get_visible_child();
         if (webkit_web_view_can_go_forward(WEBKIT_WEB_VIEW(webview->gobj())))
             webkit_web_view_go_forward(WEBKIT_WEB_VIEW(webview->gobj()));
     };
 
+    // Lambda function to call on search query changed
+    on_search_changed = [&]() -> void
+    {
+
+        // If search entry is empty, behave as if no search was done
+        if (search_entry->get_text().empty())
+        {
+            sidebar_contents->clear();
+            for (auto& node : document_root_nodes)
+                build_tree(node, sidebar_contents->append());
+            return;
+        }
+
+        // Search through all created document nodes till now
+        std::vector<const docview::doc_tree_node*> matches =
+            docview::search(search_entry->get_text());
+
+        // Clear the sidebar
+        sidebar_contents->clear();
+
+        // Show the search results in sidebar
+        for (auto& match : matches)
+        {
+            
+            // Create a new row
+            auto row = sidebar_contents->append();
+
+            // Set value of columns
+            (*row)[sidebar_column_title] = match->title;
+            (*row)[sidebar_column_node] = match;
+        }
+
+        window->show_all_children();
+    };
+
     // Lambda function to call on quit button clicked
-    std::function<void()> on_quit_button_clicked = [&]()
+    on_quit_button_clicked = [&]() -> void
     {
         window->hide();
     };
@@ -413,23 +471,26 @@ int main(int argc, char** argv)
     quit_button->signal_clicked().connect(sigc::mem_fun(on_quit_button_clicked,
         &std::function<void()>::operator()
     ));
+    search_entry->signal_changed().connect(sigc::mem_fun(on_search_changed,
+        &std::function<void()>::operator()
+    ));
 
     // Manually trigger tab added handler, which will create the initial tab
     on_tab_added();
 
-    std::function<void(const docview::doc_tree_node*, Gtk::TreeStore::iterator)> build_tree =
-        [&](const docview::doc_tree_node* node, Gtk::TreeStore::iterator row) -> void
+    build_tree = [&](const docview::doc_tree_node* node, Gtk::TreeStore::iterator row) -> void
     {
 
+        // Set value of columns
         (*row)[sidebar_column_title] = node->title;
         (*row)[sidebar_column_node] = node;
-        
+
+        // Do the same for all children
         for (auto& child : node->children)
             build_tree(child, sidebar_contents->append(row->children()));
     };
 
     docview::load("./simple_ext/simple_ext.so");
-    std::vector<const docview::doc_tree_node*> document_root_nodes;
     document_root_nodes.push_back(docview::get_docs_tree("simple_ext"));
 
     {
