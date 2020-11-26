@@ -10,7 +10,7 @@ docview_CPPFLAGS	+=		-std=c++17
 docview_CPPFLAGS	+=		-Ilibdocview
 docview_CPPFLAGS	+=		-DASSETS_DIR=\"$(assetsdir)\"
 
-docview_LDADD		 =		libdocview/libdocview.la
+docview_LDADD		 =		$(top_builddir)/src/libdocview/libdocview.la
 
 docview_CPPFLAGS	+=		$(gtkmm_CFLAGS)
 docview_CPPFLAGS	+=		$(webkit2gtk_CFLAGS)
@@ -27,6 +27,3 @@ docview_LDADD		+=		$(gtk_LIBS)
 docview_LDADD		+=		$(glibmm_LIBS)
 docview_LDADD		+=		$(glib_LIBS)
 docview_LDADD		+=		$(webkit2gtk_LIBS)
-
-libdocview/libdocview.la:
-	$(MAKE) -C libdocview/ all $(MAKEFLAGS)

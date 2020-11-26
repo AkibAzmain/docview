@@ -1,2 +1,3 @@
-ACLOCAL_AMFLAGS              =      -I m4
-SUBDIRS                      =      src src/libdocview
+ACLOCAL_AMFLAGS              =      ${ACLOCAL_FLAGS} -I m4
+AUTOMAKE_OPTIONS             =      subdir-objects
+SUBDIRS                      =      src/libdocview src
