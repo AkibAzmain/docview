@@ -19,7 +19,7 @@
 */
 
 /**
- * @file docview-c.h
+ * @file docview.h
  * @brief C bindings for libdocview
  * 
  */
@@ -332,6 +332,19 @@ const char* const* docview_doc_tree_node_synonyms(docview_doc_tree_node* node);
  * @return NULL terminated array of children
  */
 const docview_doc_tree_node* const* docview_doc_tree_node_children(docview_doc_tree_node* node);
+
+/**
+ * @brief Checks whether a document node is still valid
+ * 
+ * @details This function checks whether a document node is still valid. A document
+ * may be invalidate because of unloading an extension. It is recommended to check
+ * all root document node (or one node from a document node tree) after unloading an
+ * extension.
+ * 
+ * @param node the node to validate
+ * @return whether a document node is valid
+ */
+bool docview_validate(const docview_doc_tree_node* node);
 
 // End of extern "C", only if compiler is a C++ complier
 #ifdef __cplusplus

@@ -299,6 +299,19 @@ namespace docview
      * @return vector with nodes of matched documents
      */
     std::vector<const doc_tree_node*> search(std::string query);
+
+    /**
+     * @brief Checks whether a document node is still valid
+     * 
+     * @details This function checks whether a document node is still valid. A document
+     * may be invalidate because of unloading an extension. It is recommended to check
+     * all root document node (or one node from a document node tree) after unloading an
+     * extension.
+     * 
+     * @param node the node to validate
+     * @return whether a document node is valid
+     */
+    bool validate(const doc_tree_node* node);
 }
 
 #endif

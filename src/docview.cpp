@@ -28,6 +28,7 @@
 #include <gtkmm/modelbutton.h>
 #include <gtkmm/togglebutton.h>
 #include <gtkmm/treestore.h>
+#include <gtkmm/liststore.h>
 #include <gtkmm/treeview.h>
 #include <gtkmm/box.h>
 #include <gtkmm/paned.h>
@@ -35,11 +36,20 @@
 #include <gtkmm/stack.h>
 #include <gtkmm/stackswitcher.h>
 #include <gtkmm/switch.h>
+#include <gtkmm/revealer.h>
+#include <gtkmm/expander.h>
+#include <gtkmm/searchbar.h>
 #include <gtkmm/searchentry.h>
-#include <gtkmm/entrybuffer.h>
+#include <gtkmm/textview.h>
+#include <gtkmm/textbuffer.h>
+#include <gtkmm/dialog.h>
 #include <webkit2/webkit2.h>
 #include <glibmm/ustring.h>
 #include <glibmm/object.h>
+#include <libxml++/parsers/domparser.h>
+#include <libxml++/document.h>
+#include <libxml++/nodes/node.h>
+#include <libxml++/nodes/element.h>
 #include <memory>
 #include <exception>
 #include <iostream>
@@ -48,29 +58,152 @@
 #include <utility>
 #include <vector>
 #include <filesystem>
+#include <fstream>
+#include <sstream>
 
 // This global variable will contain pointer to Gtk::Builder (managed by Glib::RefPtr)
 Gtk::Builder* builder = nullptr;
 
 /**
- * @brief Returns shared pointer to widget specified by given id
+ * @brief Returns pointer to widget specified by given id
  * 
  * @tparam widget_type type of widget
  * @param id id of widget
- * @return shared pointer to widget
+ * @return pointer to widget
  */
 template <class widget_type = Gtk::Widget>
-std::shared_ptr<widget_type> get_widget(std::string id)
+widget_type* get_widget(std::string id)
 {
     widget_type* widget_ptr;
     builder->get_widget(id, widget_ptr);
-    std::shared_ptr<widget_type> widget;
-    widget.reset(widget_ptr);
-    return widget;
+    return widget_ptr;
 }
+
+class configuration
+{
+private:
+
+    // The parser object
+    xmlpp::DomParser parser;
+
+    // Pointer to document object
+    xmlpp::Document* document;
+
+    // The name of configuration file
+    std::string config_file;
+
+    /**
+     * @brief Returns pointer to node at given path
+     * 
+     * @param root search root
+     * @param path path of path
+     * @param create whether to create new node if does exist
+     * @return pointer to node at path
+     */
+    xmlpp::Node* get_node(xmlpp::Node* root, std::vector<std::string> path, bool create = false)
+    {
+        if (path.size() == 0)
+            return root;
+        
+        for (auto& child : root->get_children())
+        {
+            if (child->get_name() == path[0])
+                return get_node(child, std::vector<std::string>(path.begin() + 1, path.end()), create);
+        }
+
+        if (create)
+        {
+            auto element = root->add_child(path[0]);
+            return get_node(element, std::vector<std::string>(path.begin() + 1, path.end()), create);
+        }
+
+        return nullptr;
+    }
+
+public:
+
+    /**
+     * @brief Constructs a new configuration object
+     * 
+     */
+    configuration()
+        : parser(),
+        document(nullptr),
+        config_file("docview.xml")
+    {
+
+        // Try to parse config file
+        try
+        {
+            parser.parse_file(config_file);
+            document = parser.get_document();
+            if (document->get_root_node()->get_name() != "docview") throw xmlpp::exception("");
+        }
+
+        // On failure, rewrite config file
+        catch (xmlpp::exception&)
+        {
+
+            // Clear config file content
+            std::ofstream(config_file).flush();
+            document = new xmlpp::Document;
+            document->create_root_node("docview");
+        }
+    }
+
+    /**
+     * @brief Saves configuration and destroy the configuration object
+     * 
+     */
+    ~configuration()
+    {
+        document->write_to_file(config_file);
+    }
+
+    /**
+     * @brief Sets the value of a node
+     * 
+     * @param path path of node
+     * @param value the value to set
+     */
+    void set_value(std::vector<std::string> path, Glib::ustring value)
+    {
+
+        // Get the node at given path, create if doesn't exist
+        auto element = dynamic_cast<xmlpp::Element*>(get_node(document->get_root_node(), path, true));
+
+        // Set the value
+        element->set_child_text(value);
+    }
+
+    /**
+     * @brief Returns the value of a node
+     * 
+     * @param path path of node
+     * @return the value of node
+     */
+    Glib::ustring get_value(std::vector<std::string> path)
+    {
+
+        // Get the node at given path
+        auto element = dynamic_cast<xmlpp::Element*>(get_node(document->get_root_node(), path));
+
+        // Make sure element isn't nullptr, return empty string on failure
+        if (!element) return Glib::ustring();
+
+        // Make sure element has a text node isn't nullptr, return empty string on failure
+        if (!element->get_child_text()) return Glib::ustring();
+
+        // Return the value
+        return element->get_child_text()->get_content();
+    }
+};
 
 int main(int argc, char** argv)
 {
+
+    // Create the configuration object
+    configuration config;
 
     // Create new Gtk::Application object
 	auto app = Gtk::Application::create(argc, argv, "org.docview");
@@ -118,8 +251,19 @@ int main(int argc, char** argv)
     auto search_entry = get_widget<Gtk::SearchEntry>("search_entry");
     auto title = get_widget<Gtk::Stack>("title");
     auto title_label = get_widget<Gtk::Label>("title_label");
-    GObject* webview_settings = gtk_builder_get_object(builder->gobj(), "webview_settings");
+    auto webview_settings = gtk_builder_get_object(builder->gobj(), "webview_settings");
+    auto preferences_documentation_search_path =
+        get_widget<Gtk::TextView>("preferences_documentation_search_path");
     auto preferences_use_system_fonts = get_widget<Gtk::Switch>("preferences_use_system_fonts");
+    auto preferences_fonts = get_widget<Gtk::Revealer>("preferences_fonts");
+    auto preferences_extension_search_path_revealer =
+        get_widget<Gtk::Revealer>("preferences_extension_search_path_revealer");
+    auto preferences_extension_search_path_expander =
+        get_widget<Gtk::Expander>("preferences_extension_search_path_expander");
+    auto preferences_extension_list = get_widget<Gtk::TreeView>("preferences_extension_list");
+    auto preferences_extension_search_path = get_widget<Gtk::TextView>("preferences_extension_search_path");
+    Glib::RefPtr<Gtk::TextBuffer> preferences_extension_search_path_buffer = Gtk::TextBuffer::create();
+    Glib::RefPtr<Gtk::TextBuffer> preferences_documentation_search_path_buffer = Gtk::TextBuffer::create();
 
     // This structure contains the contents of sidebar
     Glib::RefPtr<Gtk::TreeStore> sidebar_contents;
@@ -134,7 +278,19 @@ int main(int argc, char** argv)
     std::vector<Gtk::Widget*> tabs;
 
     // Vector holding all root nodes provided by libdocview
-    std::vector<const docview::doc_tree_node*> document_root_nodes;
+    std::vector<std::pair<const docview::doc_tree_node*, std::filesystem::path>> document_root_nodes;
+
+    // List of all known extensions in an showable format
+    Glib::RefPtr<Gtk::ListStore> extension_list_contents;
+
+    // Column of extension list holding name
+    Gtk::TreeModelColumn<Glib::ustring> extension_list_column_name;
+
+    // Column of extension list holding is the extension enabled
+    Gtk::TreeModelColumn<bool> extension_list_column_enabled;
+
+    // Column of extension list holding path
+    Gtk::TreeModelColumn<std::string> extension_list_column_path;
 
     // Declare all lambda function
     std::function<void()> on_sidebar_toggle_button_clicked;
@@ -151,6 +307,12 @@ int main(int argc, char** argv)
     std::function<void()> on_history_next;
     std::function<void()> on_search_changed;
     std::function<void()> on_quit_button_clicked;
+    std::function<void()> on_preferences_documentation_search_path_unfocused;
+    std::function<void()> on_preferences_use_system_fonts_changed;
+    std::function<void()> on_preferences_extension_search_path_expander_state_changed;
+    std::function<void(const Gtk::TreeModel::Path&, Gtk::TreeView::Column*)>
+        on_preferences_extension_enable_toggled;
+    std::function<void()> on_preferences_extension_search_path_unfocused;
     std::function<void(const docview::doc_tree_node*, Gtk::TreeStore::iterator)> build_tree;
 
     // Lambda function to call on sidebar toggle button clicked
@@ -240,22 +402,24 @@ int main(int argc, char** argv)
         if (event == WEBKIT_LOAD_FINISHED)
         {
             if (webview_title)
-                title = webview_title + Glib::ustring(" - Docview");
+                title = webview_title;
             else
-                title = "Docview";
+                title = "<No title>";
         }
 
         // Page is being loaded, show loading in title
         else
         {
-            title = "Loading - Docview";
+            title = "Loading";
         }
     };
 
     // Lambda function to call on title changed
     on_title_changed = [&]() -> void
     {
-        title_label->set_label(stack->child_property_title(*stack->get_visible_child()));
+        title_label->set_label(
+            stack->child_property_title(*stack->get_visible_child()) + Glib::ustring(" - Docview")
+        );
     };
 
     // Lambda function to call on active tab change
@@ -280,11 +444,16 @@ int main(int argc, char** argv)
             WEBKIT_WEB_VIEW(webview->gobj()),
             WEBKIT_SETTINGS(webview_settings)
         );
+        webkit_web_view_load_html(
+            WEBKIT_WEB_VIEW(webview->gobj()),
+            "<html><head><title>Empty Page</title></head><body></body></html>",
+            nullptr
+        );
         g_signal_connect(webview->gobj(), "load-changed",
             G_CALLBACK(on_webview_load_change), nullptr);
 
         // Create new tab, present it to user
-        stack->add(*webview, std::to_string(tab_num), "Empty Page - Docview");
+        stack->add(*webview, std::to_string(tab_num), "Empty Page");
         webview->show();
         stack->set_visible_child(*webview);
 
@@ -314,7 +483,7 @@ int main(int argc, char** argv)
         }
 
         // The new stack
-        std::shared_ptr<Gtk::Stack> new_stack = std::make_shared<Gtk::Stack>();
+        Gtk::Stack* new_stack = new Gtk::Stack;
 
         // The tab to close
         Gtk::Widget* tab_to_close = stack->get_visible_child();
@@ -378,6 +547,10 @@ int main(int argc, char** argv)
 
         // Call the signal handler to handle active tab change, as active tab is changed
         on_active_tab_changed();
+
+        // Create a shared pointer, which will be destroyed with the previous stack
+        std::shared_ptr<Gtk::Stack> ptr;
+        ptr.reset(new_stack);
     };
 
     // Lambda function to call on history previous button clicked
@@ -405,7 +578,7 @@ int main(int argc, char** argv)
         {
             sidebar_contents->clear();
             for (auto& node : document_root_nodes)
-                build_tree(node, sidebar_contents->append());
+                build_tree(node.first, sidebar_contents->append());
             return;
         }
 
@@ -435,6 +608,170 @@ int main(int argc, char** argv)
     on_quit_button_clicked = [&]() -> void
     {
         window->hide();
+    };
+
+    // Lambda function to call on extension search path textview loses focus
+    on_preferences_documentation_search_path_unfocused = [&]() -> void
+    {
+
+        // If the textview has got focus just now, do nothing
+        if (preferences_documentation_search_path->property_has_focus() == true) return;
+
+        // Set the config value in configuration file
+        config.set_value(
+            {"preferences", "documentations", "search_path"},
+            preferences_documentation_search_path_buffer->get_text()
+        );
+
+        // Break the input string into paths
+        std::vector<std::filesystem::path> paths;
+        {
+            std::string path;
+            std::stringstream stream(preferences_documentation_search_path_buffer->get_text());
+            while (std::getline(stream, path))
+                paths.push_back(path);
+        }
+
+        // Clear the sidebar
+        sidebar_contents->clear();
+
+        // Clear the all known nodes
+        document_root_nodes.clear();
+
+        // Populate the sidebar again
+        for (auto& path : paths)
+        {
+
+            // Make sure path is an directory
+            if (!std::filesystem::exists(path) || !std::filesystem::is_directory(path))
+                continue;
+
+            for (auto& file : std::filesystem::directory_iterator(path))
+            {
+                const docview::doc_tree_node* node = docview::get_docs_tree(file);
+                if (node)
+                {
+                    document_root_nodes.push_back(std::make_pair(node, file.path()));
+                    build_tree(node, sidebar_contents->append());
+                }
+            }
+        }
+
+        window->show_all_children();
+    };
+
+    // Lambda function to call on preferences use system fonts switch changed
+    on_preferences_use_system_fonts_changed = [&]() -> void
+    {
+        config.set_value(
+            {"preferences", "interface", "fonts", "use_system"},
+            std::to_string(preferences_use_system_fonts->get_active())
+        );
+        preferences_fonts->set_reveal_child(!preferences_use_system_fonts->get_active());
+    };
+
+    // Lambda function to call on sidebar option selected
+    on_preferences_extension_enable_toggled =
+        [&](const Gtk::TreeModel::Path& path, Gtk::TreeView::Column*) -> void
+    {
+
+        // Iterator to the row
+        Gtk::TreeModel::iterator it = extension_list_contents->get_iter(path);
+
+        // Make sure the iterator is valid
+        if (path)
+        {
+
+            // Dereference the iterator
+            Gtk::TreeModel::Row row = *it;
+
+            config.set_value(
+                {
+                    "preferences", "extensions", "list",
+                    (std::string)(Glib::ustring)row[extension_list_column_name], "enabled"
+                },
+                std::to_string(row[extension_list_column_enabled])
+            );
+        }
+    };
+
+    // Lambda function to call on extension search path expander state changed
+    on_preferences_extension_search_path_expander_state_changed = [&]() -> void
+    {
+        preferences_extension_search_path_revealer->set_reveal_child(
+            preferences_extension_search_path_expander->get_expanded()
+        );
+    };
+
+    // Lambda function to call on extension search path textview loses focus
+    on_preferences_extension_search_path_unfocused = [&]() -> void
+    {
+
+        // If the textview has got focus just now, do nothing
+        if (preferences_extension_search_path->property_has_focus() == true) return;
+
+        // Set the config value in configuration file
+        config.set_value(
+            {"preferences", "extensions", "search_path"},
+            preferences_extension_search_path_buffer->get_text()
+        );
+
+        // Break the input string into paths
+        std::vector<std::filesystem::path> paths;
+        {
+            std::string path;
+            std::stringstream stream(preferences_extension_search_path_buffer->get_text());
+            while (std::getline(stream, path))
+                paths.push_back(path);
+        }
+
+        // Clear the list
+        extension_list_contents->clear();
+
+        // Create the list again
+        for (auto& path : paths)
+        {
+            if (!std::filesystem::exists(path) || !std::filesystem::is_directory(path))
+                continue;
+
+            for (auto& file : std::filesystem::directory_iterator(path))
+                if (std::filesystem::is_regular_file(file.path()))
+                {
+            
+                    // Create a new row
+                    auto row = extension_list_contents->append();
+
+                    // Set value of columns
+                    (*row)[extension_list_column_name] = Glib::ustring(std::string(file.path().filename()));
+                    (*row)[extension_list_column_enabled] =
+                        (config.get_value(
+                            {"preferences", "extensions", "list",
+                            std::string(file.path().filename()), "enabled"}
+                        )  == "1") ? true : false;
+                    (*row)[extension_list_column_path] = std::string(std::filesystem::absolute(file.path()));
+
+                    if ((*row)[extension_list_column_enabled])
+                    {
+                        try
+                        {
+                            docview::load(std::filesystem::absolute(file.path()));
+                        }
+                        catch (std::runtime_error& exception)
+                        {
+                            (*row)[extension_list_column_enabled] = 0;
+                            config.set_value(
+                                {
+                                    "preferences", "extensions", "list",
+                                    std::string(file.path().filename()), "enabled"
+                                },
+                                "0"
+                            );
+                        }
+                    }
+                }
+        }
+
+        window->show_all_children();
     };
 
     // Configure widgets to call the above handlers in appropiate events
@@ -474,6 +811,22 @@ int main(int argc, char** argv)
     search_entry->signal_changed().connect(sigc::mem_fun(on_search_changed,
         &std::function<void()>::operator()
     ));
+    preferences_documentation_search_path->property_has_focus().signal_changed().connect(sigc::mem_fun(
+        on_preferences_documentation_search_path_unfocused, &std::function<void()>::operator()
+    ));
+    preferences_use_system_fonts->property_state().signal_changed().connect(sigc::mem_fun(
+        on_preferences_use_system_fonts_changed, &std::function<void()>::operator()
+    ));
+    preferences_extension_search_path_expander->property_expanded().signal_changed().connect(sigc::mem_fun(
+        on_preferences_extension_search_path_expander_state_changed, &std::function<void()>::operator()
+    ));
+    preferences_extension_search_path->property_has_focus().signal_changed().connect(sigc::mem_fun(
+        on_preferences_extension_search_path_unfocused, &std::function<void()>::operator()
+    ));
+    preferences_extension_list->signal_row_activated().connect(sigc::mem_fun(
+        on_preferences_extension_enable_toggled,
+        &std::function<void(const Gtk::TreeModel::Path&, Gtk::TreeView::Column*)>::operator()
+    ));
 
     // Manually trigger tab added handler, which will create the initial tab
     on_tab_added();
@@ -490,38 +843,47 @@ int main(int argc, char** argv)
             build_tree(child, sidebar_contents->append(row->children()));
     };
 
-    docview::load("./simple_ext/simple_ext.so");
-    document_root_nodes.push_back(docview::get_docs_tree("simple_ext"));
+    preferences_extension_search_path->set_buffer(preferences_extension_search_path_buffer);
+    preferences_documentation_search_path->set_buffer(preferences_documentation_search_path_buffer);
 
-    {
-        Gtk::TreeModel::ColumnRecord sidebar_columns;
-        sidebar_columns.add(sidebar_column_title);
-        sidebar_columns.add(sidebar_column_node);
-        sidebar_contents = Gtk::TreeStore::create(sidebar_columns);
-        sidebar_tree->set_model(sidebar_contents);
-        sidebar_tree->append_column("title", sidebar_column_title);
+    // Load configuration
+    preferences_documentation_search_path_buffer->set_text(config.get_value(
+        {"preferences", "documentations", "search_path"}
+    ));
+    preferences_use_system_fonts->set_active(config.get_value(
+        {"preferences", "interface", "fonts", "use_system"}
+    ) == "0" ? false : true);
+    preferences_extension_search_path_buffer->set_text(config.get_value(
+        {"preferences", "extensions", "search_path"}
+    ));
 
-        for (auto& node : document_root_nodes)
-            build_tree(node, sidebar_contents->append());
-    }
+    Gtk::TreeModel::ColumnRecord extension_list_columns;
+    extension_list_columns.add(extension_list_column_name);
+    extension_list_columns.add(extension_list_column_enabled);
+    extension_list_columns.add(extension_list_column_path);
+    extension_list_contents = Gtk::ListStore::create(extension_list_columns);
+    preferences_extension_list->set_model(extension_list_contents);
+    preferences_extension_list->append_column("Name", extension_list_column_name);
+    preferences_extension_list->append_column_editable("Enable", extension_list_column_enabled);
+    preferences_extension_list->get_column(0)->set_expand(true);
 
-    // Just a dummy, //TODO: remove
-    {
-        webkit_web_view_load_html(WEBKIT_WEB_VIEW(tabs[0]->gobj()),
-            "<html>"
-            "<head>"
-            "<title>Empty Page</title>"
-            "</head>"
-            "<body>"
-            "<p>"
-            "Welcome to Docview!"
-            "</p>"
-            "</body>"
-            "</html>",
-        nullptr);
-    }
+    // Trigger the following event, which will fill the extension list
+    on_preferences_extension_search_path_unfocused();
+
+    // Setup the sidebar
+    Gtk::TreeModel::ColumnRecord sidebar_columns;
+    sidebar_columns.add(sidebar_column_title);
+    sidebar_columns.add(sidebar_column_node);
+    sidebar_contents = Gtk::TreeStore::create(sidebar_columns);
+    sidebar_tree->set_model(sidebar_contents);
+    sidebar_tree->append_column("title", sidebar_column_title);
+
+    // Trigger the following event, which will fill the sidebar
+    on_preferences_documentation_search_path_unfocused();
 
     // Finally, show the window to user
     doc_contents->show_all_children();
-	return app->run(*window);
+	int status = app->run(*window);
+
+    return status;
 }

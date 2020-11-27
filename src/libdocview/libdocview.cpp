@@ -290,7 +290,7 @@ std::vector<const docview::doc_tree_node*> search_node(const docview::doc_tree_n
 }
 
 // All possible applicability level of an extension
-std::array<docview::extension::applicability_level, 5> applicability_levels =
+static std::array<docview::extension::applicability_level, 5> applicability_levels =
 {
     docview::extension::applicability_level::tiny,
     docview::extension::applicability_level::small,
@@ -458,6 +458,23 @@ namespace docview
 
         return matches;
     }
+
+    bool validate(const doc_tree_node* node)
+    {
+
+        // Get the root node
+        const doc_tree_node* root = node;
+        while (root->parent)
+            root = root->parent;
+
+        // Compare with every valid root node, return true on match
+        for (auto& root_node : root_nodes)
+            if (root == root_node.first)
+                return true;
+
+        // None matched, the node is valid
+        return false;
+    }
 }
 
 docview_doc_tree_node* docview_get_docs_tree(const char* path)
@@ -504,6 +521,11 @@ const docview_doc_tree_node* const* docview_search(const char* query)
     return_value[result.size()] = nullptr;
     
     return return_value;
+}
+
+bool docview_validate(const docview_doc_tree_node* node)
+{
+    return docview::validate((docview::doc_tree_node*)node);
 }
 
 docview_doc_tree_node* docview_doc_tree_node_parent(docview_doc_tree_node* node)

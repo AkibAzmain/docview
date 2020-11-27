@@ -16,6 +16,7 @@ PKG_CHECK_MODULES([gtk], [gtk+-3.0 >= 3.24])
 PKG_CHECK_MODULES([glibmm], [glibmm-2.4 >= 2.64])
 PKG_CHECK_MODULES([glib], [glib-2.0 >= 2.64])
 PKG_CHECK_MODULES([webkit2gtk], [webkit2gtk-4.0 >= 2.28])
+PKG_CHECK_MODULES([libxmlxx], [libxml++-2.6 >= 2.40])
 
 AC_CONFIG_FILES(Makefile src/Makefile src/libdocview/Makefile)
 AC_OUTPUT
