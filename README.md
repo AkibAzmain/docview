@@ -1,8 +1,8 @@
 # Docview
 
----------
-
 Docview is an extensible documentation viewer which can show documentation in a variety of formats.
+
+Docview doesn't support any formats out of the box. You have to use extensions to extend Docview. You can also write your own extension very easily (supported languages are C and C++).
 
 ## Notes
 
