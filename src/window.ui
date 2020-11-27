@@ -441,9 +441,10 @@ along with Docview.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</property
           <object class="GtkButtonBox">
             <property name="can_focus">False</property>
             <property name="hexpand">True</property>
+            <property name="layout_style">end</property>
             <child>
-              <object class="GtkButton" id="preferences_close_button">
-                <property name="label" translatable="yes">Close</property>
+              <object class="GtkButton" id="preferences_help_button">
+                <property name="label" translatable="yes">Help</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
@@ -456,8 +457,8 @@ along with Docview.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</property
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="preferences_help_button">
-                <property name="label" translatable="yes">Help</property>
+              <object class="GtkButton" id="preferences_close_button">
+                <property name="label" translatable="yes">Close</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
