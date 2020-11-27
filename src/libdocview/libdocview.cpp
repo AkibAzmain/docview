@@ -52,7 +52,14 @@ public:
 
     // We don't want to copy it, so delete copy connstructor and define move contructor
     dl_ptr(const dl_ptr&) = delete;
-    dl_ptr& operator = (const dl_ptr&) = delete;
+    dl_ptr& operator = (const dl_ptr& other)
+    {
+        handle = other.handle;
+        path = other.path;
+        extension = other.extension;
+        ((dl_ptr*)(void*)&other)->handle = nullptr;
+        return *this;
+    }
     dl_ptr(dl_ptr&& other)
         : handle(other.handle),
         path(other.path),
@@ -167,7 +174,7 @@ public:
     }
 
     // This function returns a document tree of given path
-    const docview::doc_tree_node* get_docs_tree(std::filesystem::path path) noexcept
+    const docview::doc_tree_node* get_doc_tree(std::filesystem::path path) noexcept
     {
 
         // Convert C nodes to C++ nodes and return
@@ -182,7 +189,7 @@ public:
     }
 
     // This function returns the brief of a document node
-    std::string get_brief(const docview::doc_tree_node* node) noexcept
+    std::string brief(const docview::doc_tree_node* node) noexcept
     {
 
         // If function is null, return empty string
@@ -192,7 +199,7 @@ public:
     }
 
     // This function returns details from a document node
-    std::string get_details(const docview::doc_tree_node* node) noexcept
+    std::string details(const docview::doc_tree_node* node) noexcept
     {
 
         // If function is null, return empty string
@@ -202,7 +209,7 @@ public:
     }
     
     // This function returns a section from a document node
-    std::string get_section(const docview::doc_tree_node* node, std::string section) noexcept
+    std::string section(const docview::doc_tree_node* node, std::string section) noexcept
     {
 
         // If function is null, return empty string
@@ -301,14 +308,11 @@ static std::array<docview::extension::applicability_level, 5> applicability_leve
 
 namespace docview
 {
-    void load(std::filesystem::path path)
+    void load_ext(std::filesystem::path path)
     {
 
         // If extension is already loaded, do nothing
-        for (unsigned long i = 0; i < loaded_libs.size(); i++)
-        {
-            if (loaded_libs[i].path == path) return;
-        }
+        if(is_loaded(path)) return;
 
         // If path is non-existant and path doesn't point to a file, throw exception
         if (!std::filesystem::exists(path) || !std::filesystem::is_regular_file(path))
@@ -371,7 +375,7 @@ namespace docview
         loaded_libs[loaded_libs.size() - 1].extension = extension;
     }
 
-    void unload(std::filesystem::path path)
+    void unload_ext(std::filesystem::path path)
     {
 
         // Find out the extension to unload
@@ -396,9 +400,17 @@ namespace docview
         for (unsigned int i = 0; i < loaded_extensions.size(); i++)
             if (loaded_extensions[i] == lib_to_unload->extension)
                 loaded_extensions.erase(loaded_extensions.begin() + i--);
+
+        // Remove the extension file
+        for (unsigned int i = 0; i < loaded_libs.size(); i++)
+            if (&loaded_libs[i] == lib_to_unload)
+            {
+                loaded_libs.erase(loaded_libs.begin() + i--);
+                break;
+            }
     }
 
-    const doc_tree_node* get_docs_tree(std::filesystem::path path)
+    const doc_tree_node* get_doc_tree(std::filesystem::path path)
     {
 
         // Try to parse with extensions with applicability level from tiny to huge
@@ -410,7 +422,7 @@ namespace docview
                 // Make sure the extension matches applicability level
                 if (extension->get_applicability_level() != applicability) continue;
 
-                const doc_tree_node* doc_tree = extension->get_docs_tree(path);
+                const doc_tree_node* doc_tree = extension->get_doc_tree(path);
                 if (doc_tree)
                 {
 
@@ -425,24 +437,33 @@ namespace docview
         return nullptr;
     }
 
+    bool is_loaded(std::filesystem::path path)
+    {
+        for (unsigned long i = 0; i < loaded_libs.size(); i++)
+        {
+            if (loaded_libs[i].path == path) return true;
+        }
+        return false;
+    }
+
     std::pair<std::string, bool> get_doc(const doc_tree_node* node)
     {
         return get_extension(node)->get_doc(node);
     }
 
-    std::string get_brief(const doc_tree_node* node)
+    std::string brief(const doc_tree_node* node)
     {
-        return get_extension(node)->get_brief(node);
+        return get_extension(node)->brief(node);
     }
 
-    std::string get_details(const doc_tree_node* node)
+    std::string details(const doc_tree_node* node)
     {
-        return get_extension(node)->get_details(node);
+        return get_extension(node)->details(node);
     }
     
-    std::string get_section(const doc_tree_node* node, std::string section)
+    std::string section(const doc_tree_node* node, std::string section)
     {
-        return get_extension(node)->get_section(node, section);
+        return get_extension(node)->section(node, section);
     }
 
     std::vector<const doc_tree_node*> search(std::string query)
@@ -479,7 +500,7 @@ namespace docview
 
 docview_doc_tree_node* docview_get_docs_tree(const char* path)
 {
-    return (docview_doc_tree_node*)docview::get_docs_tree(path);
+    return (docview_doc_tree_node*)docview::get_doc_tree(path);
 }
 
 docview_document docview_get_doc(docview_doc_tree_node* node)
@@ -490,17 +511,17 @@ docview_document docview_get_doc(docview_doc_tree_node* node)
 
 const char* docview_get_brief(docview_doc_tree_node* node)
 {
-    return c_str(docview::get_brief((docview::doc_tree_node*)node));
+    return c_str(docview::brief((docview::doc_tree_node*)node));
 }
 
 const char* docview_get_details(docview_doc_tree_node* node)
 {
-    return c_str(docview::get_details((docview::doc_tree_node*)node));
+    return c_str(docview::details((docview::doc_tree_node*)node));
 }
 
 const char* docview_get_section(docview_doc_tree_node* node, const char* section)
 {
-    return c_str(docview::get_section((docview::doc_tree_node*)node, section));
+    return c_str(docview::section((docview::doc_tree_node*)node, section));
 }
 
 const docview_doc_tree_node* const* docview_search(const char* query)
@@ -577,17 +598,17 @@ docview::extension::extension() {}
 docview::extension::~extension() {}
 
 // Default virtual methods of docview::extension
-std::string docview::extension::get_brief(const docview::doc_tree_node*) noexcept
+std::string docview::extension::brief(const docview::doc_tree_node*) noexcept
 {
     return std::string();
 }
 
-std::string docview::extension::get_details(const docview::doc_tree_node*) noexcept
+std::string docview::extension::details(const docview::doc_tree_node*) noexcept
 {
     return std::string();
 }
 
-std::string docview::extension::get_section(const docview::doc_tree_node*, std::string) noexcept
+std::string docview::extension::section(const docview::doc_tree_node*, std::string) noexcept
 {
     return std::string();
 }

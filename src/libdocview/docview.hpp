@@ -46,11 +46,13 @@ namespace docview
      * @brief Loads an extension from given path
      * 
      * @details This function loads an extension from given path. If extension is
-     * already loaded, there is no effects.
+     * already loaded, there is no effects. If the provided path doesn't exist or
+     * isn't a valid extension, std::runtime_error is thrown.
      * 
      * @param path path to extension
+     * @throw std::runtime_error
      */
-    void load(std::filesystem::path path);
+    void load_ext(std::filesystem::path path);
 
     /**
      * @brief Unloads extension with given path
@@ -60,7 +62,15 @@ namespace docview
      * 
      * @param path path to extension
      */
-    void unload(std::filesystem::path path);
+    void unload_ext(std::filesystem::path path);
+
+    /**
+     * @brief Check whether extension at given path is loaded
+     * 
+     * @param path path to extension
+     * @return whether extension at given path is loaded
+     */
+    bool is_loaded(std::filesystem::path path);
 
     /**
      * @brief Structure for holding a document tree
@@ -175,7 +185,7 @@ namespace docview
          * 
          * @return pointer to document tree
          */
-        virtual const doc_tree_node* get_docs_tree(std::filesystem::path path) noexcept = 0;
+        virtual const doc_tree_node* get_doc_tree(std::filesystem::path path) noexcept = 0;
 
         /**
          * @brief Returns the URI or HTML content of document
@@ -202,7 +212,7 @@ namespace docview
          * @param node pointer to a node in document tree
          * @return brief of from document
          */
-        virtual std::string get_brief(const doc_tree_node* node) noexcept;
+        virtual std::string brief(const doc_tree_node* node) noexcept;
 
         /**
          * @brief Returns the details of from document
@@ -215,7 +225,7 @@ namespace docview
          * @param node pointer to a node in document tree
          * @return details of from document
          */
-        virtual std::string get_details(const doc_tree_node* node) noexcept;
+        virtual std::string details(const doc_tree_node* node) noexcept;
 
         /**
          * @brief Returns a section from document
@@ -228,7 +238,7 @@ namespace docview
          * @param node pointer to a node in document tree
          * @return details of from document
          */
-        virtual std::string get_section(const doc_tree_node* node, std::string section) noexcept;
+        virtual std::string section(const doc_tree_node* node, std::string section) noexcept;
     };
 
     /**
@@ -241,7 +251,7 @@ namespace docview
      * 
      * @return pointer to document tree
      */
-    const doc_tree_node* get_docs_tree(std::filesystem::path path);
+    const doc_tree_node* get_doc_tree(std::filesystem::path path);
 
     /**
      * @brief Returns the URI or HTML content of document
@@ -266,7 +276,7 @@ namespace docview
      * @param node pointer to a node in document tree
      * @return brief of from document
      */
-    std::string get_brief(const doc_tree_node* node);
+    std::string brief(const doc_tree_node* node);
 
     /**
      * @brief Returns the details of from document
@@ -278,7 +288,7 @@ namespace docview
      * @param node pointer to a node in document tree
      * @return details of from document
      */
-    std::string get_details(const doc_tree_node* node);
+    std::string details(const doc_tree_node* node);
 
     /**
      * @brief Returns a section from document
@@ -290,7 +300,7 @@ namespace docview
      * @param node pointer to a node in document tree
      * @return details of from document
      */
-    std::string get_section(const doc_tree_node* node) noexcept;
+    std::string section(const doc_tree_node* node) noexcept;
 
     /**
      * @brief Searches through all loaded document tree

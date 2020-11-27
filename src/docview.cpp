@@ -280,6 +280,9 @@ int main(int argc, char** argv)
     // Vector holding all root nodes provided by libdocview
     std::vector<std::pair<const docview::doc_tree_node*, std::filesystem::path>> document_root_nodes;
 
+    // Vector holding all loaded extension
+    std::vector<std::filesystem::path> loaded_extensions;
+
     // List of all known extensions in an showable format
     Glib::RefPtr<Gtk::ListStore> extension_list_contents;
 
@@ -648,7 +651,7 @@ int main(int argc, char** argv)
 
             for (auto& file : std::filesystem::directory_iterator(path))
             {
-                const docview::doc_tree_node* node = docview::get_docs_tree(file);
+                const docview::doc_tree_node* node = docview::get_doc_tree(file);
                 if (node)
                 {
                     document_root_nodes.push_back(std::make_pair(node, file.path()));
@@ -692,7 +695,28 @@ int main(int argc, char** argv)
                 },
                 std::to_string(row[extension_list_column_enabled])
             );
+
+            if (row[extension_list_column_enabled])
+            {
+                docview::load_ext((std::string)row[extension_list_column_path]);
+                loaded_extensions.push_back((std::string)row[extension_list_column_path]);
+            }
+            else
+            {
+                docview::unload_ext((std::string)row[extension_list_column_path]);
+                for (auto it = loaded_extensions.begin(); it != loaded_extensions.end(); it++)
+                {
+                    if (*it == (std::string)row[extension_list_column_path])
+                    {
+                        loaded_extensions.erase(it);
+                        break;
+                    }
+                }
+            }
         }
+
+        // Update the sidebar
+        on_preferences_documentation_search_path_unfocused();
     };
 
     // Lambda function to call on extension search path expander state changed
@@ -728,6 +752,13 @@ int main(int argc, char** argv)
         // Clear the list
         extension_list_contents->clear();
 
+        // Unload all extensions
+        for (auto& extension : loaded_extensions)
+        {
+            docview::unload_ext(extension);
+        }
+        loaded_extensions.clear();
+
         // Create the list again
         for (auto& path : paths)
         {
@@ -754,7 +785,8 @@ int main(int argc, char** argv)
                     {
                         try
                         {
-                            docview::load(std::filesystem::absolute(file.path()));
+                            docview::load_ext(std::filesystem::absolute(file.path()));
+                            loaded_extensions.push_back(std::filesystem::absolute(file.path()));
                         }
                         catch (std::runtime_error& exception)
                         {
@@ -770,6 +802,9 @@ int main(int argc, char** argv)
                     }
                 }
         }
+
+        // Update the sidebar
+        on_preferences_documentation_search_path_unfocused();
 
         window->show_all_children();
     };
@@ -867,9 +902,6 @@ int main(int argc, char** argv)
     preferences_extension_list->append_column_editable("Enable", extension_list_column_enabled);
     preferences_extension_list->get_column(0)->set_expand(true);
 
-    // Trigger the following event, which will fill the extension list
-    on_preferences_extension_search_path_unfocused();
-
     // Setup the sidebar
     Gtk::TreeModel::ColumnRecord sidebar_columns;
     sidebar_columns.add(sidebar_column_title);
@@ -878,8 +910,8 @@ int main(int argc, char** argv)
     sidebar_tree->set_model(sidebar_contents);
     sidebar_tree->append_column("title", sidebar_column_title);
 
-    // Trigger the following event, which will fill the sidebar
-    on_preferences_documentation_search_path_unfocused();
+    // Trigger the following event, which will fill the extension list and sidebar
+    on_preferences_extension_search_path_unfocused();
 
     // Finally, show the window to user
     doc_contents->show_all_children();
