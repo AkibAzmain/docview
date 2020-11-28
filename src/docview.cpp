@@ -213,7 +213,7 @@ int main(int argc, char** argv)
 
     // Set the global builder variable to enable the use of function get_widget
     ::builder = builder.get();
-    
+
     // Register WebKit's WebView and Settings widget to prevent builder errors
     webkit_web_view_new();
     webkit_settings_new();
@@ -595,7 +595,7 @@ int main(int argc, char** argv)
         // Show the search results in sidebar
         for (auto& match : matches)
         {
-            
+
             // Create a new row
             auto row = sidebar_contents->append();
 
@@ -768,7 +768,7 @@ int main(int argc, char** argv)
             for (auto& file : std::filesystem::directory_iterator(path))
                 if (std::filesystem::is_regular_file(file.path()))
                 {
-            
+
                     // Create a new row
                     auto row = extension_list_contents->append();
 
@@ -808,6 +808,11 @@ int main(int argc, char** argv)
 
         window->show_all_children();
     };
+
+    // Set icons
+    window->set_icon_from_file(std::string(ICONS_DIR) + "/docview48x48.png");
+    about_dialog->property_logo() =
+        Gdk::Pixbuf::create_from_file(std::string(ICONS128_DIR) + "/docview128x128.png");
 
     // Configure widgets to call the above handlers in appropiate events
     sidebar_toggle_button->signal_clicked().connect(
@@ -914,8 +919,9 @@ int main(int argc, char** argv)
     on_preferences_extension_search_path_unfocused();
 
     // Finally, show the window to user
-    doc_contents->show_all_children();
-	int status = app->run(*window);
+    window->show_all_children();
+    about_dialog->show_all_children();
+    int status = app->run(*window);
 
     return status;
 }
