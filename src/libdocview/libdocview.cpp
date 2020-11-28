@@ -314,9 +314,26 @@ namespace docview
         // If extension is already loaded, do nothing
         if(is_loaded(path)) return;
 
-        // If path is non-existant and path doesn't point to a file, throw exception
-        if (!std::filesystem::exists(path) || !std::filesystem::is_regular_file(path))
-            throw std::runtime_error(std::string(path) + "is either non-existant or not a file");
+        // If path is non-existant, throw exception
+        if (!std::filesystem::exists(path))
+            throw std::runtime_error(std::string(path) + " doesn't exist");
+
+        // If path isn't a file but a symlink, dereference it
+        if (!std::filesystem::is_regular_file(path))
+        {
+
+            // Resolve symlink address
+            while (std::filesystem::exists(path) && std::filesystem::is_symlink(path))
+            {
+                path = std::filesystem::read_symlink(path);
+            }
+
+            // If the target isn't a file, throw
+            if (!std::filesystem::exists(path) || !std::filesystem::is_regular_file(path))
+            {
+                throw std::runtime_error(std::string(path) + " doesn't exist or not a file");
+            }
+        }
         
         // Load the extension file into memory
         loaded_libs.emplace_back(path);
@@ -412,6 +429,27 @@ namespace docview
 
     const doc_tree_node* get_doc_tree(std::filesystem::path path)
     {
+
+        // If path is non-existant, throw exception
+        if (!std::filesystem::exists(path))
+            throw std::runtime_error(std::string(path) + " doesn't exist");
+
+        // If path is a symlink, dereference it
+        if (std::filesystem::is_symlink(path))
+        {
+
+            // Resolve symlink address
+            while (std::filesystem::exists(path) && std::filesystem::is_symlink(path))
+            {
+                path = std::filesystem::read_symlink(path);
+            }
+
+            // If the target isn't a file, throw
+            if (!std::filesystem::exists(path))
+            {
+                throw std::runtime_error(std::string(path) + " doesn't exist");
+            }
+        }
 
         // Try to parse with extensions with applicability level from tiny to huge
         for (auto& applicability : applicability_levels)

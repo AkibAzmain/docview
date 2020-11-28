@@ -19,7 +19,8 @@ docview_CPPFLAGS             =      -Wall -Wextra -pedantic
 docview_CPPFLAGS            +=      -std=c++17
 docview_CPPFLAGS            +=      -I$(top_srcdir)/src/libdocview
 docview_CPPFLAGS            +=      -DASSETS_DIR=\"$(assetsdir)\"
-docview_CPPFLAGS            +=      -DICONS_DIR=\"$(iconsdir)\" \
+docview_CPPFLAGS            +=      -DICONS_SCALABLE_DIR=\"$(icons_scalabledir)\" \
+                                    -DICONS48_DIR=\"$(icons48dir)\" \
                                     -DICONS96_DIR=\"$(icons96dir)\" \
                                     -DICONS128_DIR=\"$(icons128dir)\" \
                                     -DICONS256_DIR=\"$(icons256dir)\"

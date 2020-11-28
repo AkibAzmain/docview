@@ -261,7 +261,9 @@ int main(int argc, char** argv)
     auto preferences_extension_search_path_expander =
         get_widget<Gtk::Expander>("preferences_extension_search_path_expander");
     auto preferences_extension_list = get_widget<Gtk::TreeView>("preferences_extension_list");
-    auto preferences_extension_search_path = get_widget<Gtk::TextView>("preferences_extension_search_path");
+    auto preferences_extension_search_path =
+        get_widget<Gtk::TextView>("preferences_extension_search_path");
+    auto preferences_close_button = get_widget<Gtk::Button>("preferences_close_button");
     Glib::RefPtr<Gtk::TextBuffer> preferences_extension_search_path_buffer = Gtk::TextBuffer::create();
     Glib::RefPtr<Gtk::TextBuffer> preferences_documentation_search_path_buffer = Gtk::TextBuffer::create();
 
@@ -316,6 +318,7 @@ int main(int argc, char** argv)
     std::function<void(const Gtk::TreeModel::Path&, Gtk::TreeView::Column*)>
         on_preferences_extension_enable_toggled;
     std::function<void()> on_preferences_extension_search_path_unfocused;
+    std::function<void()> on_preferences_close_button_clicked;
     std::function<void(const docview::doc_tree_node*, Gtk::TreeStore::iterator)> build_tree;
 
     // Lambda function to call on sidebar toggle button clicked
@@ -809,8 +812,16 @@ int main(int argc, char** argv)
         window->show_all_children();
     };
 
+    // Lambda function to call on preferences close button clicked
+    on_preferences_close_button_clicked = [&]() -> void
+    {
+
+        // Close the preferences dialog
+        preferences_dialog->hide();
+    };
+
     // Set icons
-    window->set_icon_from_file(std::string(ICONS_DIR) + "/docview48x48.png");
+    window->set_icon_from_file(std::string(ICONS48_DIR) + "/docview48x48.png");
     about_dialog->property_logo() =
         Gdk::Pixbuf::create_from_file(std::string(ICONS128_DIR) + "/docview128x128.png");
 
@@ -866,6 +877,10 @@ int main(int argc, char** argv)
     preferences_extension_list->signal_row_activated().connect(sigc::mem_fun(
         on_preferences_extension_enable_toggled,
         &std::function<void(const Gtk::TreeModel::Path&, Gtk::TreeView::Column*)>::operator()
+    ));
+    preferences_close_button->signal_clicked().connect(sigc::mem_fun(
+        on_preferences_close_button_clicked,
+        &std::function<void()>::operator()
     ));
 
     // Manually trigger tab added handler, which will create the initial tab
