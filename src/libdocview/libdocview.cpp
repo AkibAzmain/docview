@@ -43,14 +43,14 @@ public:
 
     // Pointer to extension object by this extension
     docview::extension* extension;
-    
-    dl_ptr(std::filesystem::path path, int flags = RTLD_NOW | RTLD_GLOBAL)
+
+    dl_ptr(std::filesystem::path path, int flags = RTLD_NOW | RTLD_LOCAL)
         : handle(dlopen(std::string(path).c_str(), flags)),
         path(path),
         extension(nullptr)
     {}
 
-    // We don't want to copy it, so delete copy connstructor and define move contructor
+    // We don't want to copy it, so delete copy constructor and define move contructor
     dl_ptr(const dl_ptr&) = delete;
     dl_ptr& operator = (const dl_ptr& other)
     {
