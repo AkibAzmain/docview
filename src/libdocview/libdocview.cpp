@@ -325,7 +325,12 @@ namespace docview
             // Resolve symlink address
             while (std::filesystem::exists(path) && std::filesystem::is_symlink(path))
             {
-                path = std::filesystem::read_symlink(path);
+
+                // Change working directory to resolve relative links, revert after done
+                std::filesystem::path cwd = std::filesystem::current_path();
+                std::filesystem::current_path(path.parent_path());
+                path = std::filesystem::absolute(std::filesystem::read_symlink(path));
+                std::filesystem::current_path(cwd);
             }
 
             // If the target isn't a file, throw

@@ -6,5 +6,7 @@ This is an incomplete list of extensions. If you know about any other extensions
 
 Extension name          | Brief             | URI
 ------------------------|-------------------|-----------------
+manview                 | Extension to view man pages in Docview | <https://github.com/AkibAzmain/manview>
+devdoc                  | Extension to view Devhelp documentations in Docview | <https://github.com/AkibAzmain/devdoc>
 
 <!-- Add extensions before this line -->
