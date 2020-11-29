@@ -654,12 +654,16 @@ int main(int argc, char** argv)
 
             for (auto& file : std::filesystem::directory_iterator(path))
             {
-                const docview::doc_tree_node* node = docview::get_doc_tree(file);
-                if (node)
+                try
                 {
-                    document_root_nodes.push_back(std::make_pair(node, file.path()));
-                    build_tree(node, sidebar_contents->append());
+                    const docview::doc_tree_node* node = docview::get_doc_tree(file);
+                    if (node)
+                    {
+                        document_root_nodes.push_back(std::make_pair(node, file.path()));
+                        build_tree(node, sidebar_contents->append());
+                    }
                 }
+                catch (...) {}
             }
         }
 
