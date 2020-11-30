@@ -129,9 +129,10 @@ Author: Akib Azmain
         <property name="spacing">5</property>
         <property name="show_close_button">True</property>
         <child>
-          <object class="GtkBox">
+          <object class="GtkButtonBox">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
+            <property name="layout_style">expand</property>
             <child>
               <object class="GtkButton" id="history_previous">
                 <property name="visible">True</property>
@@ -215,7 +216,6 @@ Author: Akib Azmain
               <object class="GtkStackSwitcher" id="tabs">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="stack">doc_webviews</property>
               </object>
               <packing>
                 <property name="name">tabs</property>
@@ -240,7 +240,7 @@ Author: Akib Azmain
           </object>
           <packing>
             <property name="pack_type">end</property>
-            <property name="position">3</property>
+            <property name="position">2</property>
           </packing>
         </child>
         <child>
@@ -259,6 +259,24 @@ Author: Akib Azmain
           <packing>
             <property name="pack_type">end</property>
             <property name="position">3</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkButton">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="receives_default">True</property>
+            <child>
+              <object class="GtkImage">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="icon_name">view-refresh-symbolic</property>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="pack_type">end</property>
+            <property name="position">4</property>
           </packing>
         </child>
       </object>
@@ -342,13 +360,111 @@ Author: Akib Azmain
             <property name="can_focus">False</property>
             <property name="orientation">vertical</property>
             <child>
-              <object class="GtkStack" id="doc_webviews">
+              <object class="GtkBox">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="transition_duration">250</property>
-                <property name="transition_type">slide-left-right</property>
+                <property name="orientation">vertical</property>
                 <child>
-                  <placeholder/>
+                  <object class="GtkSearchBar">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="show_close_button">True</property>
+                    <child>
+                      <object class="GtkBox">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <child>
+                          <object class="GtkSearchEntry">
+                            <property name="width_request">240</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="truncate_multiline">True</property>
+                            <property name="caps_lock_warning">False</property>
+                            <property name="primary_icon_name">edit-find-symbolic</property>
+                            <property name="primary_icon_activatable">False</property>
+                            <property name="primary_icon_sensitive">False</property>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkButtonBox">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="homogeneous">True</property>
+                            <property name="layout_style">expand</property>
+                            <child>
+                              <object class="GtkButton">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">True</property>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <property name="icon_name">go-up-symbolic</property>
+                                  </object>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">False</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkButton">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">True</property>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <property name="icon_name">go-down-symbolic</property>
+                                  </object>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">False</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">False</property>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkStack" id="doc_webviews">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="transition_duration">250</property>
+                    <property name="transition_type">slide-left-right</property>
+                    <child>
+                      <placeholder/>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">True</property>
+                    <property name="fill">True</property>
+                    <property name="position">2</property>
+                  </packing>
                 </child>
               </object>
               <packing>
@@ -615,7 +731,7 @@ along with Docview.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</property
                                 <property name="level">GTK_FONT_CHOOSER_LEVEL_SIZE | GTK_FONT_CHOOSER_LEVEL_FAMILY</property>
                                 <property name="preview_text"/>
                                 <property name="show_preview_entry">False</property>
-                                <property name="use_font">True</property>
+                                <property name="title" translatable="yes">Select a default font</property>
                                 <property name="show_style">False</property>
                               </object>
                               <packing>
@@ -653,12 +769,12 @@ along with Docview.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</property
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
-                                <property name="font">Sans 12</property>
+                                <property name="font">Ubuntu Mono 12</property>
                                 <property name="language">en-us</property>
                                 <property name="level">GTK_FONT_CHOOSER_LEVEL_SIZE | GTK_FONT_CHOOSER_LEVEL_FAMILY</property>
                                 <property name="preview_text"/>
                                 <property name="show_preview_entry">False</property>
-                                <property name="use_font">True</property>
+                                <property name="title" translatable="yes">Select a monospace font</property>
                                 <property name="show_style">False</property>
                               </object>
                               <packing>
@@ -853,6 +969,14 @@ along with Docview.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</property
     </child>
   </object>
   <object class="WebKitSettings" id="webview_settings">
+    <property name="default_font_family"/>
+    <property name="monospace_font_family">ubuntu mono</property>
+    <property name="serif_font_family"/>
+    <property name="sans_serif_font_family"/>
+    <property name="cursive_font_family"/>
+    <property name="fantasy_font_family"/>
+    <property name="pictograph_font_family"/>
+    <property name="default_monospace_font_size">16</property>
     <property name="user_agent">Mozilla/5.0 (X11; Ubuntu; Linux x86_64) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0 Safari/605.1.15</property>
     <property name="allow_file_access_from_file_urls">True</property>
     <property name="enable_back_forward_navigation_gestures">True</property>

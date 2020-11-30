@@ -43,9 +43,10 @@
 #include <gtkmm/textview.h>
 #include <gtkmm/textbuffer.h>
 #include <gtkmm/dialog.h>
+#include <gtkmm/fontbutton.h>
 #include <webkit2/webkit2.h>
 #include <glibmm/ustring.h>
-#include <glibmm/object.h>
+#include <pango/pango-font.h>
 #include <libxml++/parsers/domparser.h>
 #include <libxml++/document.h>
 #include <libxml++/nodes/node.h>
@@ -256,6 +257,8 @@ int main(int argc, char** argv)
         get_widget<Gtk::TextView>("preferences_documentation_search_path");
     auto preferences_use_system_fonts = get_widget<Gtk::Switch>("preferences_use_system_fonts");
     auto preferences_fonts = get_widget<Gtk::Revealer>("preferences_fonts");
+    auto preferences_default_font = get_widget<Gtk::FontButton>("preferences_default_font");
+    auto preferences_monospace_font = get_widget<Gtk::FontButton>("preferences_monospace_font");
     auto preferences_extension_search_path_revealer =
         get_widget<Gtk::Revealer>("preferences_extension_search_path_revealer");
     auto preferences_extension_search_path_expander =
@@ -314,6 +317,8 @@ int main(int argc, char** argv)
     std::function<void()> on_quit_button_clicked;
     std::function<void()> on_preferences_documentation_search_path_unfocused;
     std::function<void()> on_preferences_use_system_fonts_changed;
+    std::function<void()> on_preferences_default_font_changed;
+    std::function<void()> on_preferences_monospace_font_changed;
     std::function<void()> on_preferences_extension_search_path_expander_state_changed;
     std::function<void(const Gtk::TreeModel::Path&, Gtk::TreeView::Column*)>
         on_preferences_extension_enable_toggled;
@@ -678,6 +683,77 @@ int main(int argc, char** argv)
             std::to_string(preferences_use_system_fonts->get_active())
         );
         preferences_fonts->set_reveal_child(!preferences_use_system_fonts->get_active());
+
+        if (preferences_use_system_fonts->get_active())
+        {
+            webkit_settings_set_default_font_family(WEBKIT_SETTINGS(webview_settings), "Ubuntu");
+            webkit_settings_set_default_font_size(WEBKIT_SETTINGS(webview_settings), 14);
+            webkit_settings_set_monospace_font_family(WEBKIT_SETTINGS(webview_settings), "Ubuntu Mono");
+            webkit_settings_set_default_monospace_font_size(WEBKIT_SETTINGS(webview_settings), 14);
+        }
+        else
+        {
+            on_preferences_default_font_changed();
+            on_preferences_monospace_font_changed();
+        }
+
+        window->show_all_children();
+    };
+
+    // Lambda function to call on default font preferences changed
+    on_preferences_default_font_changed = [&]() -> void
+    {
+        Glib::ustring font_family;
+        int font_size;
+        {
+
+            // TODO: Use of deprecated function, replace with an alternative
+            auto font = pango_font_description_from_string(
+                preferences_default_font->get_font_name().c_str()
+            );
+            font_family = pango_font_description_get_family(font);
+            font_size = pango_font_description_get_size(font) / PANGO_SCALE;
+            pango_font_description_free(font);
+        }
+
+        webkit_settings_set_default_font_family(WEBKIT_SETTINGS(webview_settings), font_family.c_str());
+        webkit_settings_set_default_font_size(WEBKIT_SETTINGS(webview_settings), font_size);
+
+        // TODO: Use of deprecated function, replace with an alternative
+        config.set_value(
+            {"preferences", "interface", "fonts", "default"},
+            preferences_default_font->get_font_name()
+        );
+
+        window->show_all_children();
+    };
+
+    // Lambda function to call on monospace font preferences changed
+    on_preferences_monospace_font_changed = [&]() -> void
+    {
+        Glib::ustring font_family;
+        int font_size;
+        {
+
+            // TODO: Use of deprecated function, replace with an alternative
+            auto font = pango_font_description_from_string(
+                preferences_monospace_font->get_font_name().c_str()
+            );
+            font_family = pango_font_description_get_family(font);
+            font_size = pango_font_description_get_size(font) / PANGO_SCALE;
+            pango_font_description_free(font);
+        }
+
+        webkit_settings_set_monospace_font_family(WEBKIT_SETTINGS(webview_settings), font_family.c_str());
+        webkit_settings_set_default_monospace_font_size(WEBKIT_SETTINGS(webview_settings), font_size);
+
+        // TODO: Use of deprecated function, replace with an alternative
+        config.set_value(
+            {"preferences", "interface", "fonts", "monospace"},
+            preferences_monospace_font->get_font_name()
+        );
+
+        window->show_all_children();
     };
 
     // Lambda function to call on sidebar option selected
@@ -829,6 +905,27 @@ int main(int argc, char** argv)
     about_dialog->property_logo() =
         Gdk::Pixbuf::create_from_file(std::string(ICONS128_DIR) + "/docview128x128.png");
 
+    // Load configuration
+    preferences_documentation_search_path_buffer->set_text(config.get_value(
+        {"preferences", "documentations", "search_path"}
+    ));
+    preferences_use_system_fonts->set_active(config.get_value(
+        {"preferences", "interface", "fonts", "use_system"}
+    ) == "0" ? false : true);
+    preferences_default_font->set_font_name(config.get_value(
+        {"preferences", "interface", "fonts", "default"}
+    ) == "" ? "Ubuntu 14" : config.get_value(
+        {"preferences", "interface", "fonts", "default"}
+    ));
+    preferences_monospace_font->set_font_name(config.get_value(
+        {"preferences", "interface", "fonts", "monospace"}
+    ) == "" ? "Ubuntu Mono 14" : config.get_value(
+        {"preferences", "interface", "fonts", "monospace"}
+    ));
+    preferences_extension_search_path_buffer->set_text(config.get_value(
+        {"preferences", "extensions", "search_path"}
+    ));
+
     // Configure widgets to call the above handlers in appropiate events
     sidebar_toggle_button->signal_clicked().connect(
         sigc::mem_fun(on_sidebar_toggle_button_clicked, &std::function<void()>::operator())
@@ -872,6 +969,12 @@ int main(int argc, char** argv)
     preferences_use_system_fonts->property_state().signal_changed().connect(sigc::mem_fun(
         on_preferences_use_system_fonts_changed, &std::function<void()>::operator()
     ));
+    preferences_default_font->signal_font_set().connect(sigc::mem_fun(
+        on_preferences_default_font_changed, &std::function<void()>::operator()
+    ));
+    preferences_monospace_font->signal_font_set().connect(sigc::mem_fun(
+        on_preferences_monospace_font_changed, &std::function<void()>::operator()
+    ));
     preferences_extension_search_path_expander->property_expanded().signal_changed().connect(sigc::mem_fun(
         on_preferences_extension_search_path_expander_state_changed, &std::function<void()>::operator()
     ));
@@ -905,17 +1008,6 @@ int main(int argc, char** argv)
     preferences_extension_search_path->set_buffer(preferences_extension_search_path_buffer);
     preferences_documentation_search_path->set_buffer(preferences_documentation_search_path_buffer);
 
-    // Load configuration
-    preferences_documentation_search_path_buffer->set_text(config.get_value(
-        {"preferences", "documentations", "search_path"}
-    ));
-    preferences_use_system_fonts->set_active(config.get_value(
-        {"preferences", "interface", "fonts", "use_system"}
-    ) == "0" ? false : true);
-    preferences_extension_search_path_buffer->set_text(config.get_value(
-        {"preferences", "extensions", "search_path"}
-    ));
-
     Gtk::TreeModel::ColumnRecord extension_list_columns;
     extension_list_columns.add(extension_list_column_name);
     extension_list_columns.add(extension_list_column_enabled);
@@ -936,6 +1028,9 @@ int main(int argc, char** argv)
 
     // Trigger the following event, which will fill the extension list and sidebar
     on_preferences_extension_search_path_unfocused();
+
+    // Change fonts
+    on_preferences_use_system_fonts_changed();
 
     // Finally, show the window to user
     window->show_all_children();
