@@ -842,7 +842,7 @@ int main(int argc, char** argv)
     {
 
         // TODO: Use of deprecated function, replace with an alternative
-        Glib::ustring font_id = preferences_default_font->get_font_name();
+        Glib::ustring font_id = preferences_monospace_font->get_font_name();
         Glib::ustring font_family;
         int font_size;
         {
