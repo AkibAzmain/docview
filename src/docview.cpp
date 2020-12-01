@@ -418,16 +418,21 @@ int main(int argc, char** argv)
     // Lambda function to call on webview load change
     on_webview_load_change = [](WebKitWebView* webview, WebKitLoadEvent event, void*) -> void
     {
+
+        // Title property of webview
         auto title = ((Gtk::Stack*)Glib::wrap(GTK_WIDGET(webview))->get_parent())->child_property_title(
             *Glib::wrap(GTK_WIDGET(webview))
         );
 
+        // Title of webview, maybe nullptr
         const char* webview_title = webkit_web_view_get_title(webview);
 
         // If the page has finished loading, change the title of window to title of page
         if (event == WEBKIT_LOAD_FINISHED)
         {
-            if (webview_title)
+
+            // Make sure webview title isn't nullptr or empty
+            if (webview_title && Glib::ustring(webview_title) != Glib::ustring())
                 title = webview_title;
             else
                 title = "<No title>";
@@ -443,6 +448,8 @@ int main(int argc, char** argv)
     // Lambda function to call on title changed
     on_title_changed = [&]() -> void
     {
+
+        // Change the window title
         title_label->set_label(
             stack->child_property_title(*stack->get_visible_child()) + Glib::ustring(" - Docview")
         );
@@ -451,7 +458,11 @@ int main(int argc, char** argv)
     // Lambda function to call on active tab change
     on_active_tab_changed = [&]() -> void
     {
+
+        // The active tab is changed, so title should be changed
         on_title_changed();
+
+        // The active tab is changed, so setup the find bar if open
         on_webview_find_bar_state_changed();
     };
 
@@ -582,20 +593,27 @@ int main(int argc, char** argv)
     // Lambda function to call on webview refresh button clicked
     on_webview_refresh_button_clicked = [&]() -> void
     {
+
+        // Reload webview
         webkit_web_view_reload(WEBKIT_WEB_VIEW(stack->get_visible_child()->gobj()));
     };
 
     // Lambda function to call on webview clicked button clicked
     on_webview_find_button_clicked = [&]() -> void
     {
+
+        // Open find bar
         webview_find_bar->set_search_mode();
     };
 
     // Lambda function to call on webview find bar state changed
     on_webview_find_bar_state_changed = [&]() -> void
     {
+
+        // The find bar is either opened or closed, so empty the find query
         webview_find->set_text(Glib::ustring());
 
+        // If search mode in on, setup the webview find controller
         if (webview_find_bar->get_search_mode())
         {
             webview_finder = webkit_web_view_get_find_controller(
@@ -607,6 +625,8 @@ int main(int argc, char** argv)
     // Lambda function to call on webview find query changed
     on_webview_find_text_changed = [&]() -> void
     {
+
+        // Find query isn't empty, find
         if (webview_find->get_text() != Glib::ustring())
         {
             webkit_find_controller_search(
@@ -616,6 +636,8 @@ int main(int argc, char** argv)
                 G_MAXUINT
             );
         }
+
+        // Otherwise, end the search
         else
         {
             webkit_find_controller_search_finish(webview_finder);
@@ -625,6 +647,8 @@ int main(int argc, char** argv)
     // Lambda function to call on webview find previous button clicked
     on_webview_find_previous = [&]() -> void
     {
+
+        // Go to previous result, only if possible
         if (webview_finder && webview_find->get_text() != Glib::ustring())
             webkit_find_controller_search_previous(webview_finder);
     };
@@ -632,6 +656,8 @@ int main(int argc, char** argv)
     // Lambda function to call on webview find next button clicked
     on_webview_find_next = [&]() -> void
     {
+
+        // Go to next result, only if possible
         if (webview_finder && webview_find->get_text() != Glib::ustring())
             webkit_find_controller_search_next(webview_finder);
     };
@@ -639,6 +665,8 @@ int main(int argc, char** argv)
     // Lambda function to call on history previous button clicked
     on_history_previous = [&]() -> void
     {
+
+        // Go to previous result, only if possible
         Gtk::Widget* webview = stack->get_visible_child();
         if (webkit_web_view_can_go_back(WEBKIT_WEB_VIEW(webview->gobj())))
             webkit_web_view_go_back(WEBKIT_WEB_VIEW(webview->gobj()));
@@ -647,6 +675,8 @@ int main(int argc, char** argv)
     // Lambda function to call on history next button clicked
     on_history_next = [&]() -> void
     {
+
+        // Go to next result, only if possible
         Gtk::Widget* webview = stack->get_visible_child();
         if (webkit_web_view_can_go_forward(WEBKIT_WEB_VIEW(webview->gobj())))
             webkit_web_view_go_forward(WEBKIT_WEB_VIEW(webview->gobj()));
@@ -729,6 +759,7 @@ int main(int argc, char** argv)
             if (!std::filesystem::exists(path) || !std::filesystem::is_directory(path))
                 continue;
 
+            // For every file, try to parse it, do nothing on failure
             for (auto& file : std::filesystem::directory_iterator(path))
             {
                 try
@@ -750,12 +781,17 @@ int main(int argc, char** argv)
     // Lambda function to call on preferences use system fonts switch changed
     on_preferences_use_system_fonts_changed = [&]() -> void
     {
+
+        // Update configuration
         config.set_value(
             {"preferences", "interface", "fonts", "use_system"},
             std::to_string(preferences_use_system_fonts->get_active())
         );
+
+        // Show or hide other options according to state
         preferences_fonts->set_reveal_child(!preferences_use_system_fonts->get_active());
 
+        // If enabled, use system fonts
         if (preferences_use_system_fonts->get_active())
         {
             webkit_settings_set_default_font_family(WEBKIT_SETTINGS(webview_settings), "Ubuntu");
@@ -763,6 +799,8 @@ int main(int argc, char** argv)
             webkit_settings_set_monospace_font_family(WEBKIT_SETTINGS(webview_settings), "Ubuntu Mono");
             webkit_settings_set_default_monospace_font_size(WEBKIT_SETTINGS(webview_settings), 14);
         }
+
+        // Otherwise of user selected fonts
         else
         {
             on_preferences_default_font_changed();
@@ -775,27 +813,26 @@ int main(int argc, char** argv)
     // Lambda function to call on default font preferences changed
     on_preferences_default_font_changed = [&]() -> void
     {
+
+        // TODO: Use of deprecated function, replace with an alternative
+        Glib::ustring font_id = preferences_default_font->get_font_name();
         Glib::ustring font_family;
         int font_size;
         {
 
-            // TODO: Use of deprecated function, replace with an alternative
-            auto font = pango_font_description_from_string(
-                preferences_default_font->get_font_name().c_str()
-            );
+            // Parse font ID to get size and family
+            auto font = pango_font_description_from_string(font_id.c_str());
             font_family = pango_font_description_get_family(font);
             font_size = pango_font_description_get_size(font) / PANGO_SCALE;
             pango_font_description_free(font);
         }
 
+        // Set fonts
         webkit_settings_set_default_font_family(WEBKIT_SETTINGS(webview_settings), font_family.c_str());
         webkit_settings_set_default_font_size(WEBKIT_SETTINGS(webview_settings), font_size);
 
-        // TODO: Use of deprecated function, replace with an alternative
-        config.set_value(
-            {"preferences", "interface", "fonts", "default"},
-            preferences_default_font->get_font_name()
-        );
+        // Update configuration
+        config.set_value({"preferences", "interface", "fonts", "default"}, font_id);
 
         window->show_all_children();
     };
@@ -803,27 +840,26 @@ int main(int argc, char** argv)
     // Lambda function to call on monospace font preferences changed
     on_preferences_monospace_font_changed = [&]() -> void
     {
+
+        // TODO: Use of deprecated function, replace with an alternative
+        Glib::ustring font_id = preferences_default_font->get_font_name();
         Glib::ustring font_family;
         int font_size;
         {
 
-            // TODO: Use of deprecated function, replace with an alternative
-            auto font = pango_font_description_from_string(
-                preferences_monospace_font->get_font_name().c_str()
-            );
+            // Parse font ID to get size and family
+            auto font = pango_font_description_from_string(font_id.c_str());
             font_family = pango_font_description_get_family(font);
             font_size = pango_font_description_get_size(font) / PANGO_SCALE;
             pango_font_description_free(font);
         }
 
+        // Set fonts
         webkit_settings_set_monospace_font_family(WEBKIT_SETTINGS(webview_settings), font_family.c_str());
         webkit_settings_set_default_monospace_font_size(WEBKIT_SETTINGS(webview_settings), font_size);
 
-        // TODO: Use of deprecated function, replace with an alternative
-        config.set_value(
-            {"preferences", "interface", "fonts", "monospace"},
-            preferences_monospace_font->get_font_name()
-        );
+        // Update configuration
+        config.set_value({"preferences", "interface", "fonts", "monospace"}, font_id);
 
         window->show_all_children();
     };
@@ -1125,7 +1161,10 @@ int main(int argc, char** argv)
     // Finally, show the window to user
     window->show_all_children();
     about_dialog->show_all_children();
+
+    // Store status in a variable, as we might need to do some destruction tasks manually
     int status = app->run(*window);
 
+    // Return status of application
     return status;
 }

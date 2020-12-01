@@ -326,11 +326,20 @@ namespace docview
             while (std::filesystem::exists(path) && std::filesystem::is_symlink(path))
             {
 
-                // Change working directory to resolve relative links, revert after done
-                std::filesystem::path cwd = std::filesystem::current_path();
-                std::filesystem::current_path(path.parent_path());
-                path = std::filesystem::absolute(std::filesystem::read_symlink(path));
-                std::filesystem::current_path(cwd);
+                // Get the target symbolic link
+                std::filesystem::path sym_path = std::filesystem::read_symlink(path);
+
+                // If target is absolute, assign it to path
+                if (std::string(path)[0] != '/')
+                {
+                    path = sym_path;
+                }
+
+                // Otherwise, append it to path's parent with a directory
+                else
+                {
+                    path = path.parent_path() / sym_path;
+                }
             }
 
             // If the target isn't a file, throw
@@ -446,10 +455,24 @@ namespace docview
             // Resolve symlink address
             while (std::filesystem::exists(path) && std::filesystem::is_symlink(path))
             {
-                path = std::filesystem::read_symlink(path);
+
+                // Get the target symbolic link
+                std::filesystem::path sym_path = std::filesystem::read_symlink(path);
+
+                // If target is absolute, assign it to path
+                if (std::string(path)[0] != '/')
+                {
+                    path = sym_path;
+                }
+
+                // Otherwise, append it to path's parent with a directory
+                else
+                {
+                    path = path.parent_path() / sym_path;
+                }
             }
 
-            // If the target isn't a file, throw
+            // If the target doesn't exist, throw
             if (!std::filesystem::exists(path))
             {
                 throw std::runtime_error(std::string(path) + " doesn't exist");
