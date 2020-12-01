@@ -992,6 +992,8 @@ along with Docview.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</property
     <property name="fantasy_font_family"/>
     <property name="pictograph_font_family"/>
     <property name="default_monospace_font_size">16</property>
+    <property name="enable_fullscreen">False</property>
+    <property name="javascript_can_access_clipboard">True</property>
     <property name="user_agent">Mozilla/5.0 (X11; Ubuntu; Linux x86_64) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0 Safari/605.1.15</property>
     <property name="allow_file_access_from_file_urls">True</property>
     <property name="enable_back_forward_navigation_gestures">True</property>
