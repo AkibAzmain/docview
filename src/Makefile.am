@@ -6,7 +6,7 @@ icons128dir                  =      $(datarootdir)/icons/hicolor/128x128/apps
 icons256dir                  =      $(datarootdir)/icons/hicolor/256x256/apps
 
 bin_PROGRAMS                 =      docview
-assets_HEADERS               =      window.ui
+assets_HEADERS               =      window.ui welcome.html
 icons_scalable_HEADERS       =      docview.svg
 icons48_HEADERS              =      docview.svg docview48x48.png
 icons96_HEADERS              =      docview96x96.png
@@ -29,18 +29,8 @@ docview_LDADD                =      $(top_builddir)/src/libdocview/libdocview.la
 
 docview_CPPFLAGS            +=      $(gtkmm_CFLAGS)
 docview_CPPFLAGS            +=      $(webkit2gtk_CFLAGS)
-docview_CPPFLAGS            +=      $(gtkmm_CFLAGS)
-docview_CPPFLAGS            +=      $(gtk_CFLAGS)
-docview_CPPFLAGS            +=      $(glibmm_CFLAGS)
-docview_CPPFLAGS            +=      $(glib_CFLAGS)
-docview_CPPFLAGS            +=      $(webkit2gtk_CFLAGS)
 docview_CPPFLAGS            +=      $(libxmlxx_CFLAGS)
 
 docview_LDADD               +=      $(gtkmm_LIBS)
-docview_LDADD               +=      $(webkit2gtk_LIBS)
-docview_LDADD               +=      $(gtkmm_LIBS)
-docview_LDADD               +=      $(gtk_LIBS)
-docview_LDADD               +=      $(glibmm_LIBS)
-docview_LDADD               +=      $(glib_LIBS)
 docview_LDADD               +=      $(webkit2gtk_LIBS)
 docview_LDADD               +=      $(libxmlxx_LIBS)

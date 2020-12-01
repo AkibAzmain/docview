@@ -232,7 +232,7 @@ int main(int argc, char** argv)
         std::terminate();
     }
 
-    // Get pointer to widget from builder
+    // Get pointers to widgets from builder
     auto window = get_widget<Gtk::Window>("window_main");
     auto doc_contents = get_widget<Gtk::Box>("doc_contents");
     auto contents = get_widget<Gtk::Paned>("contents");
@@ -245,6 +245,12 @@ int main(int argc, char** argv)
     auto sidebar_tree = get_widget<Gtk::TreeView>("sidebar_tree");
     auto tab_switcher = get_widget<Gtk::StackSwitcher>("tabs");
     auto stack = get_widget<Gtk::Stack>("doc_webviews");
+    auto webview_refresh_button = get_widget<Gtk::Button>("webview_refresh_button");
+    auto webview_find_button = get_widget<Gtk::ModelButton>("webview_find_button");
+    auto webview_find_bar = get_widget<Gtk::SearchBar>("webview_find_bar");
+    auto webview_find = get_widget<Gtk::SearchEntry>("webview_find");
+    auto webview_find_previous_button = get_widget<Gtk::Button>("webview_find_previous");
+    auto webview_find_next_button = get_widget<Gtk::Button>("webview_find_next");
     auto history_previous_button = get_widget<Gtk::Button>("history_previous");
     auto history_next_button = get_widget<Gtk::Button>("history_next");
     auto new_tab_button = get_widget<Gtk::Button>("new_tab_button");
@@ -279,8 +285,11 @@ int main(int argc, char** argv)
     // Column of sidebar tree holding pointer to node
     Gtk::TreeModelColumn<const docview::doc_tree_node*> sidebar_column_node;
 
-    // This mapped array holds all tabs
+    // This array holds all tabs
     std::vector<Gtk::Widget*> tabs;
+
+    // This variable holds pointer to find controller of currently visible webview
+    WebKitFindController* webview_finder = nullptr;
 
     // Vector holding all root nodes provided by libdocview
     std::vector<std::pair<const docview::doc_tree_node*, std::filesystem::path>> document_root_nodes;
@@ -311,6 +320,12 @@ int main(int argc, char** argv)
     std::function<void()> on_active_tab_changed;
     std::function<void()> on_tab_added;
     std::function<void()> on_tab_closed;
+    std::function<void()> on_webview_refresh_button_clicked;
+    std::function<void()> on_webview_find_button_clicked;
+    std::function<void()> on_webview_find_bar_state_changed;
+    std::function<void()> on_webview_find_text_changed;
+    std::function<void()> on_webview_find_previous;
+    std::function<void()> on_webview_find_next;
     std::function<void()> on_history_previous;
     std::function<void()> on_history_next;
     std::function<void()> on_search_changed;
@@ -437,6 +452,7 @@ int main(int argc, char** argv)
     on_active_tab_changed = [&]() -> void
     {
         on_title_changed();
+        on_webview_find_bar_state_changed();
     };
 
     // Lambda function to call on tab added
@@ -455,10 +471,9 @@ int main(int argc, char** argv)
             WEBKIT_WEB_VIEW(webview->gobj()),
             WEBKIT_SETTINGS(webview_settings)
         );
-        webkit_web_view_load_html(
+        webkit_web_view_load_uri(
             WEBKIT_WEB_VIEW(webview->gobj()),
-            "<html><head><title>Empty Page</title></head><body></body></html>",
-            nullptr
+            (std::string("file://") + ASSETS_DIR + "/welcome.html").c_str()
         );
         g_signal_connect(webview->gobj(), "load-changed",
             G_CALLBACK(on_webview_load_change), nullptr);
@@ -562,6 +577,63 @@ int main(int argc, char** argv)
         // Create a shared pointer, which will be destroyed with the previous stack
         std::shared_ptr<Gtk::Stack> ptr;
         ptr.reset(new_stack);
+    };
+
+    // Lambda function to call on webview refresh button clicked
+    on_webview_refresh_button_clicked = [&]() -> void
+    {
+        webkit_web_view_reload(WEBKIT_WEB_VIEW(stack->get_visible_child()->gobj()));
+    };
+
+    // Lambda function to call on webview clicked button clicked
+    on_webview_find_button_clicked = [&]() -> void
+    {
+        webview_find_bar->set_search_mode();
+    };
+
+    // Lambda function to call on webview find bar state changed
+    on_webview_find_bar_state_changed = [&]() -> void
+    {
+        webview_find->set_text(Glib::ustring());
+
+        if (webview_find_bar->get_search_mode())
+        {
+            webview_finder = webkit_web_view_get_find_controller(
+                WEBKIT_WEB_VIEW(stack->get_visible_child()->gobj())
+            );
+        }
+    };
+
+    // Lambda function to call on webview find query changed
+    on_webview_find_text_changed = [&]() -> void
+    {
+        if (webview_find->get_text() != Glib::ustring())
+        {
+            webkit_find_controller_search(
+                webview_finder,
+                webview_find->get_text().c_str(),
+                WEBKIT_FIND_OPTIONS_CASE_INSENSITIVE,
+                G_MAXUINT
+            );
+        }
+        else
+        {
+            webkit_find_controller_search_finish(webview_finder);
+        }
+    };
+
+    // Lambda function to call on webview find previous button clicked
+    on_webview_find_previous = [&]() -> void
+    {
+        if (webview_finder && webview_find->get_text() != Glib::ustring())
+            webkit_find_controller_search_previous(webview_finder);
+    };
+
+    // Lambda function to call on webview find next button clicked
+    on_webview_find_next = [&]() -> void
+    {
+        if (webview_finder && webview_find->get_text() != Glib::ustring())
+            webkit_find_controller_search_next(webview_finder);
     };
 
     // Lambda function to call on history previous button clicked
@@ -871,7 +943,7 @@ int main(int argc, char** argv)
                             docview::load_ext(std::filesystem::absolute(file.path()));
                             loaded_extensions.push_back(std::filesystem::absolute(file.path()));
                         }
-                        catch (std::runtime_error& exception)
+                        catch (std::runtime_error&)
                         {
                             (*row)[extension_list_column_enabled] = 0;
                             config.set_value(
@@ -955,6 +1027,24 @@ int main(int argc, char** argv)
         &std::function<void()>::operator()
     ));
     history_next_button->signal_clicked().connect(sigc::mem_fun(on_history_next,
+        &std::function<void()>::operator()
+    ));
+    webview_refresh_button->signal_clicked().connect(sigc::mem_fun(on_webview_refresh_button_clicked,
+        &std::function<void()>::operator()
+    ));
+    webview_find_button->signal_clicked().connect(sigc::mem_fun(on_webview_find_button_clicked,
+        &std::function<void()>::operator()
+    ));
+    webview_find_bar->property_search_mode_enabled().signal_changed().connect(sigc::mem_fun(
+        on_webview_find_bar_state_changed, &std::function<void()>::operator()
+    ));
+    webview_find->signal_changed().connect(sigc::mem_fun(on_webview_find_text_changed,
+        &std::function<void()>::operator()
+    ));
+    webview_find_previous_button->signal_clicked().connect(sigc::mem_fun(on_webview_find_previous,
+        &std::function<void()>::operator()
+    ));
+    webview_find_next_button->signal_clicked().connect(sigc::mem_fun(on_webview_find_next,
         &std::function<void()>::operator()
     ));
     quit_button->signal_clicked().connect(sigc::mem_fun(on_quit_button_clicked,

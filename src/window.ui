@@ -39,6 +39,19 @@ Author: Akib Azmain
         <property name="border_width">5</property>
         <property name="orientation">vertical</property>
         <child>
+          <object class="GtkModelButton" id="webview_find_button">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="receives_default">True</property>
+            <property name="text" translatable="yes">Find</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
           <object class="GtkModelButton" id="close_tab_button">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
@@ -48,7 +61,7 @@ Author: Akib Azmain
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
-            <property name="position">0</property>
+            <property name="position">1</property>
           </packing>
         </child>
         <child>
@@ -59,7 +72,7 @@ Author: Akib Azmain
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
-            <property name="position">1</property>
+            <property name="position">2</property>
           </packing>
         </child>
         <child>
@@ -72,7 +85,7 @@ Author: Akib Azmain
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
-            <property name="position">2</property>
+            <property name="position">3</property>
           </packing>
         </child>
         <child>
@@ -86,7 +99,7 @@ Author: Akib Azmain
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
-            <property name="position">3</property>
+            <property name="position">4</property>
           </packing>
         </child>
         <child>
@@ -97,7 +110,7 @@ Author: Akib Azmain
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
-            <property name="position">4</property>
+            <property name="position">5</property>
           </packing>
         </child>
         <child>
@@ -111,7 +124,7 @@ Author: Akib Azmain
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
-            <property name="position">5</property>
+            <property name="position">6</property>
           </packing>
         </child>
       </object>
@@ -262,7 +275,7 @@ Author: Akib Azmain
           </packing>
         </child>
         <child>
-          <object class="GtkButton">
+          <object class="GtkButton" id="webview_refresh_button">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
@@ -365,7 +378,7 @@ Author: Akib Azmain
                 <property name="can_focus">False</property>
                 <property name="orientation">vertical</property>
                 <child>
-                  <object class="GtkSearchBar">
+                  <object class="GtkSearchBar" id="webview_find_bar">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="show_close_button">True</property>
@@ -373,8 +386,9 @@ Author: Akib Azmain
                       <object class="GtkBox">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
+                        <property name="spacing">2</property>
                         <child>
-                          <object class="GtkSearchEntry">
+                          <object class="GtkSearchEntry" id="webview_find">
                             <property name="width_request">240</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
@@ -397,7 +411,7 @@ Author: Akib Azmain
                             <property name="homogeneous">True</property>
                             <property name="layout_style">expand</property>
                             <child>
-                              <object class="GtkButton">
+                              <object class="GtkButton" id="webview_find_previous">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
@@ -416,7 +430,7 @@ Author: Akib Azmain
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkButton">
+                              <object class="GtkButton" id="webview_find_next">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
@@ -769,7 +783,7 @@ along with Docview.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</property
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
-                                <property name="font">Ubuntu Mono 12</property>
+                                <property name="font">Sans 12</property>
                                 <property name="language">en-us</property>
                                 <property name="level">GTK_FONT_CHOOSER_LEVEL_SIZE | GTK_FONT_CHOOSER_LEVEL_FAMILY</property>
                                 <property name="preview_text"/>
