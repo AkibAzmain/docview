@@ -61,6 +61,7 @@
 #include <filesystem>
 #include <fstream>
 #include <sstream>
+#include <cstdlib>
 
 // This global variable will contain pointer to Gtk::Builder (managed by Glib::RefPtr)
 Gtk::Builder* builder = nullptr;
@@ -130,8 +131,27 @@ public:
     configuration()
         : parser(),
         document(nullptr),
-        config_file("docview.xml")
+
+        // Setup config file path according to platform
+        config_file(
+            #ifdef __linux__
+                std::filesystem::path("/home")
+            #else
+                std::filesystem::path("C:/Users")
+            #endif
+            / std::getenv("USER") /
+            #ifdef __linux__
+                std::filesystem::path(".local/share/Docview")
+            #endif
+            / "docview.xml"
+        )
     {
+
+        // Make sure directory exists
+        if (!std::filesystem::exists(config_file))
+        {
+            std::filesystem::create_directories(config_file);
+        }
 
         // Try to parse config file
         try
