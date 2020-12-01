@@ -58,7 +58,7 @@ namespace docview
      * @brief Unloads extension with given path
      * 
      * @details This function unloads extension with given path. If extension isn't
-     * load, there is no effects.
+     * loaded, there is no effects.
      * 
      * @param path path to extension
      */

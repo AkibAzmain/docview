@@ -44,6 +44,36 @@ extern "C"
 #endif
 
 /**
+ * @brief Loads an extension from given path
+ * 
+ * @details This function loads an extension from given path. If extension is
+ * already loaded, there is no effects. If the provided path doesn't exist or
+ * isn't a valid extension, false is returned.
+ * 
+ * @param path path to extension
+ * @return true on success, false on failure
+ */
+bool docview_load_ext(const char* path);
+
+/**
+ * @brief Unloads extension with given path
+ * 
+ * @details This function unloads extension with given path. If extension isn't
+ * loaded, there is no effects.
+ * 
+ * @param path path to extension
+ */
+void docview_unload_ext(const char* path);
+
+/**
+ * @brief Check whether extension at given path is loaded
+ * 
+ * @param path path to extension
+ * @return whether extension at given path is loaded
+ */
+bool docview_ext_is_loaded(std::filesystem::path path);
+
+/**
  * @brief Structure for holding a document tree
  * 
  */

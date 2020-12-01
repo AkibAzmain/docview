@@ -564,6 +564,29 @@ namespace docview
     }
 }
 
+bool docview_load_ext(const char* path)
+{
+    try
+    {
+        docview::load_ext(path);
+        return true;
+    }
+    catch (std::runtime_error&)
+    {
+        return false;
+    }
+}
+
+void docview_unload_ext(const char* path)
+{
+    docview::unload_ext(path);
+}
+
+bool docview_ext_is_loaded(const char* path)
+{
+    return docview::is_loaded(path);
+}
+
 docview_doc_tree_node* docview_get_docs_tree(const char* path)
 {
     return (docview_doc_tree_node*)docview::get_doc_tree(path);
