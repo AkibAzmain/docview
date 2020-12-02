@@ -20,7 +20,7 @@ There are many popular documentation viewer available (both free and paid). The
 advantage of Docview is it's ability to be extended which is an unavailable
 feature of most other documentation viewer. The following is a comparison of
 Docview (with proper extensions enabled) some other documentation viewers (not
-to ):
+to condemn other softwares):
 
  Feature | Docview | man | Devhelp
 ---------|---------|-----|---------

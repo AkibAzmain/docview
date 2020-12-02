@@ -44,6 +44,7 @@
 #include <gtkmm/textbuffer.h>
 #include <gtkmm/dialog.h>
 #include <gtkmm/fontbutton.h>
+#include <gtkmm/spinbutton.h>
 #include <webkit2/webkit2.h>
 #include <glibmm/ustring.h>
 #include <pango/pango-font.h>
@@ -281,6 +282,7 @@ int main(int argc, char** argv)
     auto webview_settings = gtk_builder_get_object(builder->gobj(), "webview_settings");
     auto preferences_documentation_search_path =
         get_widget<Gtk::TextView>("preferences_documentation_search_path");
+    auto preferences_max_search_results = get_widget<Gtk::SpinButton>("preferences_max_search_results");
     auto preferences_use_system_fonts = get_widget<Gtk::Switch>("preferences_use_system_fonts");
     auto preferences_fonts = get_widget<Gtk::Revealer>("preferences_fonts");
     auto preferences_default_font = get_widget<Gtk::FontButton>("preferences_default_font");
@@ -723,15 +725,19 @@ int main(int argc, char** argv)
         sidebar_contents->clear();
 
         // Show the search results in sidebar
-        for (auto& match : matches)
+        for (
+            unsigned long i = 0;
+            i < matches.size() && int(i) < preferences_max_search_results->get_value_as_int();
+            i++
+        )
         {
 
             // Create a new row
             auto row = sidebar_contents->append();
 
             // Set value of columns
-            (*row)[sidebar_column_title] = match->title;
-            (*row)[sidebar_column_node] = match;
+            (*row)[sidebar_column_title] = matches[i]->title;
+            (*row)[sidebar_column_node] = matches[i];
         }
 
         window->show_all_children();
@@ -814,6 +820,8 @@ int main(int argc, char** argv)
         // If enabled, use system fonts
         if (preferences_use_system_fonts->get_active())
         {
+
+            // TODO: These are just dummy fonts, get actual ones from system
             webkit_settings_set_default_font_family(WEBKIT_SETTINGS(webview_settings), "Ubuntu");
             webkit_settings_set_default_font_size(WEBKIT_SETTINGS(webview_settings), 14);
             webkit_settings_set_monospace_font_family(WEBKIT_SETTINGS(webview_settings), "Ubuntu Mono");
@@ -1053,6 +1061,11 @@ int main(int argc, char** argv)
     preferences_extension_search_path_buffer->set_text(config.get_value(
         {"preferences", "extensions", "search_path"}
     ));
+    preferences_max_search_results->set_value(config.get_value(
+        {"preferences", "interface", "search", "max_results"}
+    ) == "" ? 500 : std::stoi(config.get_value(
+        {"preferences", "interface", "search", "max_results"}
+    )));
 
     // Configure widgets to call the above handlers in appropiate events
     sidebar_toggle_button->signal_clicked().connect(
@@ -1184,6 +1197,12 @@ int main(int argc, char** argv)
 
     // Store status in a variable, as we might need to do some destruction tasks manually
     int status = app->run(*window);
+
+    // Save max search result setting
+    config.set_value(
+        {"preferences", "interface", "search", "max_results"},
+        std::to_string(preferences_max_search_results->get_value_as_int())
+    );
 
     // Return status of application
     return status;
