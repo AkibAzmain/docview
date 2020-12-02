@@ -301,6 +301,9 @@ int main(int argc, char** argv)
     // This structure contains the contents of sidebar
     Glib::RefPtr<Gtk::TreeStore> sidebar_contents;
 
+    // This structure contains search results of sidebar
+    Glib::RefPtr<Gtk::TreeStore> sidebar_search_results;
+
     // Column of sidebar tree holding title
     Gtk::TreeModelColumn<Glib::ustring> sidebar_column_title;
 
@@ -708,21 +711,23 @@ int main(int argc, char** argv)
     on_search_changed = [&]() -> void
     {
 
-        // If search entry is empty, behave as if no search was done
+        // If search entry is empty, reset sidebar to it's original state
         if (search_entry->get_text().empty())
         {
-            sidebar_contents->clear();
-            for (auto& node : document_root_nodes)
-                build_tree(node.first, sidebar_contents->append());
+            sidebar_tree->set_model(sidebar_contents);
+            window->show_all_children();
             return;
         }
+
+        // Change the data holder of sidebar
+        sidebar_tree->set_model(sidebar_search_results);
 
         // Search through all created document nodes till now
         std::vector<const docview::doc_tree_node*> matches =
             docview::search(search_entry->get_text());
 
         // Clear the sidebar
-        sidebar_contents->clear();
+        sidebar_search_results->clear();
 
         // Show the search results in sidebar
         for (
@@ -733,7 +738,7 @@ int main(int argc, char** argv)
         {
 
             // Create a new row
-            auto row = sidebar_contents->append();
+            auto row = sidebar_search_results->append();
 
             // Set value of columns
             (*row)[sidebar_column_title] = matches[i]->title;
@@ -1182,6 +1187,7 @@ int main(int argc, char** argv)
     sidebar_columns.add(sidebar_column_title);
     sidebar_columns.add(sidebar_column_node);
     sidebar_contents = Gtk::TreeStore::create(sidebar_columns);
+    sidebar_search_results = Gtk::TreeStore::create(sidebar_columns);
     sidebar_tree->set_model(sidebar_contents);
     sidebar_tree->append_column("title", sidebar_column_title);
 
