@@ -806,6 +806,10 @@ int main(int argc, char** argv)
             }
         }
 
+        // Change sidebar contents
+        sidebar_tree->set_model(sidebar_contents);
+        search_entry->set_text(Glib::ustring());
+
         window->show_all_children();
     };
 
