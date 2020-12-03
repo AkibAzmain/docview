@@ -9,6 +9,7 @@ Docview, an extensible documentation viewer
     libdocview/index
     docview/extensions
     docview/writing-extensions
+    genindex
 
 Docview is an extensible documentation viewer which can show documentation in a
 variety of formats. It is extensible with extensions, so it's possible to view
