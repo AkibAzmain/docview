@@ -14,13 +14,14 @@ Why use Docview
 
 As Docview is extensible, it isn't limited to only a few number of formats like
 most documentation viewer. With the help of `extensions
-<docview.readthedocs.org>`_, it can show almost any type of documentation. So it
-isn't required to wait for new releases to add support for a particular format,
-anyone can write an extension adding support for that format. So you don't need
-switch from one documentation viewer to another (e.g Terminal for man and info
-pages, Devhelp for GNOME documentations), Docview is an all-in-one solution. For
-a comparison of Docview with other documentation viewers, see `Comparison with
-other documentation viewers <docview.readthedocs.org>`_.
+<https://docview.readthedocs.io/en/latest/docview/extensions.html>`_, it can
+show almost any type of documentation. So it isn't required to wait for new
+releases to add support for a particular format, anyone can write an extension
+adding support for that format. So you don't need switch from one documentation
+viewer to another (e.g Terminal for man and info pages, Devhelp for GNOME
+documentations), Docview is an all-in-one solution. For a comparison of Docview
+with other documentation viewers, see `Comparison with other documentation
+viewers <https://docview.readthedocs.io/en/latest/docview/extensions.html>`_.
 
 License
 -------
