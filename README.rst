@@ -23,6 +23,11 @@ documentations), Docview is an all-in-one solution. For a comparison of Docview
 with other documentation viewers, see `Comparison with other documentation
 viewers <https://docview.readthedocs.io/en/latest/docview/extensions.html>`_.
 
+Documentations
+--------------
+
+All documentations are available at `<https://docview.readthedocs.io/>`_.
+
 License
 -------
 
