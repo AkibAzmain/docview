@@ -146,7 +146,7 @@ private:
 public:
 
     // Constructs the object, throws on invalid input
-    c_extension(docview_extension_funcs* functions)
+    c_extension(docview_extension_functions* functions)
         : func_applicability_level(functions->applicability_level),
         func_get_docs_tree(functions->func_get_docs_tree),
         func_get_doc(functions->get_doc),
@@ -374,7 +374,7 @@ namespace docview
             std::shared_ptr<c_extension> c_ext;
 
             // Get extension functions
-            docview_extension_funcs* ext_funcs = (docview_extension_funcs*)dlsym(
+            docview_extension_functions* ext_funcs = (docview_extension_functions*)dlsym(
                 loaded_libs[loaded_libs.size() - 1].handle, "extension_functions"
             );
 

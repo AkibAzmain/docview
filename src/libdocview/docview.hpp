@@ -236,6 +236,7 @@ namespace docview
          * returns an empty string.
          * 
          * @param node pointer to a node in document tree
+         * @param section the name of section
          * @return details of from document
          */
         virtual std::string section(const doc_tree_node* node, std::string section) noexcept;

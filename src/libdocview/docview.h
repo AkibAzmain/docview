@@ -32,15 +32,13 @@
 #   include <stdbool.h>
 #endif
 
+// Include stddef.h for NULL
+#include <stddef.h>
+
 // If it's being compiled by a C++ compiler, disable name mangling
 #ifdef __cplusplus
 extern "C"
 {
-#endif
-
-// Define NULL if not defined
-#ifndef NULL
-#   define NULL 0
 #endif
 
 /**
@@ -119,7 +117,7 @@ struct docview_document
     const char* content_or_uri;
 
     /**
-     * @brief True if content_or_uri is URI, false otherwise
+     * @brief True if content_or_uri a is URI, false otherwise
      * 
      */
     bool is_uri;
