@@ -4,7 +4,8 @@ Writing extensions
 ==================
 
 Docview is an **extensible** documentation viewer. And it uses extensions which
-are responsible parsing documents into trees shown in Docview's sidebar.
+are responsible for parsing documents into trees shown in Docview's sidebar.
+
 
 Theory behind extensions
 ------------------------
@@ -12,14 +13,25 @@ Theory behind extensions
 The theory behind extensions are simple. An extension adds support for a (or
 several format) format to Docview. Docview make API calls to libdocview, and
 libdocview calls extension to parse documents. On success, the extension returns
-a document tree, which is made of document nodes. On failure, it does nothing
-but notifies libdocview about the incident somehow, depending on the language
-being used. After parse documents into document tree, the program requests the
-actual document pointed by a node. libdocview redirects the request to the
-extension that owns the node and the extension returns the content or URI of
-document.
+a :ref:`document tree <document-tree>`, which is made of document nodes. On
+failure, it does nothing but notifies libdocview about the incident somehow,
+depending on the language being used. After parse documents into document tree,
+the program requests the actual document pointed by a node. libdocview redirects
+the request to the extension that owns the node and the extension returns the
+content or URI of document.
 
-A document tree::
+
+.. _document-tree:
+
+What is a document tree?
+++++++++++++++++++++++++
+
+Document tree builds from the relations betweens several :ref:`document nodes
+<document-node>`. Every document node contains information about it's parent and
+children. This makes relations between nodes which is like a tree. This is where
+the concept of document tree comes from.
+
+An example of an document tree::
 
                 --------
                 | Root |
@@ -47,6 +59,8 @@ Every extension must have two things. They are:
 * Applicability level of the extension
 
 
+.. _document-node:
+
 What is a document node?
 ++++++++++++++++++++++++
 
@@ -60,7 +74,7 @@ these are:
 * Reference to all children nodes of the node
 
 
-.. _what-is-applicability-level:
+.. _applicability-level:
 
 What is applicability level?
 ++++++++++++++++++++++++++++
@@ -140,7 +154,7 @@ extension. Further ahead::
 Every extension must define the method ``get_applicability_level``. It would
 return a enumerator named ``applicability_level``. This enumerator contains
 several member (e.g. tiny, small, medium, big, huge). See
-":ref:`what-is-applicability-level`" for more. In this example, it returns
+":ref:`applicability-level`" for more. In this example, it returns
 ``applicability_level::tiny``. The next method::
 
     const docview::doc_tree_node* get_doc_tree(std::filesystem::path path) noexcept
@@ -183,7 +197,8 @@ Writing extension in C
 ++++++++++++++++++++++
 
 C is a general purpose procedural language. So you need to use functions and
-structures to build an extension.
+structures to build an extension. This tutorial assumes that the reader much
+knowledge about C++.
 
 In accordance with the ancient tradition of computer science, introducing a
 hello world extension for Docview::
@@ -191,9 +206,9 @@ hello world extension for Docview::
     #include <docview.h>
     #include <stdlib.h> // For malloc
 
-    enum applicability_level get_applicability_level()
+    enum docview_extension_applicability_level get_applicability_level()
     {
-        return applicability_level::tiny;
+        return docview_extension_applicability_level_tiny;
     }
 
     const struct docview_extension_doc_tree_node* get_doc_tree(const char* path)
@@ -227,13 +242,13 @@ Let's see what's going on here. The very first line::
 ``docview.h`` is the C header of libdocview. In the next line, ``stdlib.h`` is
 included for ``malloc``. Then::
 
-    enum applicability_level get_applicability_level()
+    enum docview_extension_applicability_level get_applicability_level()
     {
-        return applicability_level::tiny;
+        return docview_extension_applicability_level_tiny;
     }
 
 Every extension must define this function. This function return the
-applicability level of the extension. See ":ref:`what-is-applicability-level`"
+applicability level of the extension. See ":ref:`applicability-level`"
 for more. Then::
 
     const struct docview_extension_doc_tree_node* get_doc_tree(const char* path)

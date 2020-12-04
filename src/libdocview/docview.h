@@ -20,7 +20,25 @@
 
 /**
  * @file docview.h
- * @brief C bindings for libdocview
+ * @details @rst
+ * 
+ * ``docview.h`` is the C header of libdocview. It provides all functions,
+ * structures, enumerations required to interact with Docview. It mainly
+ * consists of two parts. One part is for applications like documentation viewer
+ * or browsers, IDEs for handling documentations. Another part is for
+ * extensions. The first part provides functions required to load and unload
+ * extensions, parse documents into :ref:`document trees <document-tree>` and
+ * access them. The second part is extension related. It defines the most
+ * important structure for extensions written in C,
+ * :cpp:class:`docview_extension_functions`, which holds all required function
+ * pointers of an extension. All symbols defined in this file is prefixed with
+ * ``docview_``.
+ * 
+ * Include this file with::
+ * 
+ *      #include <docview.h>
+ * 
+ * @endrst
  * 
  */
 
@@ -44,9 +62,13 @@ extern "C"
 /**
  * @brief Loads an extension from given path
  * 
- * @details This function loads an extension from given path. If extension is
- * already loaded, there is no effects. If the provided path doesn't exist or
- * isn't a valid extension, false is returned.
+ * @details @rst
+ * 
+ * This function loads an extension from given path. If extension is already
+ * loaded, there is no effects. If extension loading fails, ``false`` is
+ * returned.
+ * 
+ * @endrst
  * 
  * @param path path to extension
  * @return true on success, false on failure
@@ -56,8 +78,12 @@ bool docview_load_ext(const char* path);
 /**
  * @brief Unloads extension with given path
  * 
- * @details This function unloads extension with given path. If extension isn't
+ * @details @rst
+ * 
+ * This function unloads extension with given path. If extension isn't
  * loaded, there is no effects.
+ * 
+ * @endrst
  * 
  * @param path path to extension
  */
@@ -66,13 +92,26 @@ void docview_unload_ext(const char* path);
 /**
  * @brief Check whether extension at given path is loaded
  * 
+ * @details @rst
+ * 
+ * This function checks whether an extension at given path is located.
+ * 
+ * @endrst
+ * 
  * @param path path to extension
  * @return whether extension at given path is loaded
  */
 bool docview_ext_is_loaded(std::filesystem::path path);
 
 /**
- * @brief Structure for holding a document tree
+ * @brief Structure for holding a document node
+ * 
+ * @details @rst
+ * 
+ * This structure holds all information about a document node. For more, see
+ * ":ref:`document-node`".
+ * 
+ * @endrst
  * 
  */
 struct docview_extension_doc_tree_node
@@ -117,14 +156,23 @@ struct docview_document
     const char* content_or_uri;
 
     /**
-     * @brief True if content_or_uri a is URI, false otherwise
+     * @brief @rst
+     * ``true`` if ``content_or_uri`` a is URI, ``false`` otherwise
+     * @endrst
      * 
      */
     bool is_uri;
 };
 
 /**
- * @brief Enum holding all possible values of applicability level of an extension
+ * @brief Enum holding all possible values of applicability level of an
+ * extension
+ * 
+ * @details @rst
+ * 
+ * For more, see ":ref:`applicability-level`".
+ * 
+ * @endrst
  * 
  */
 enum docview_extension_applicability_level
@@ -137,13 +185,15 @@ enum docview_extension_applicability_level
     docview_extension_applicability_level_tiny = 0,
 
     /**
-     * @brief The extension applies to a small amount of documentations, but not as small as tiny
+     * @brief The extension applies to a small amount of documentations, but not
+     * as small as tiny
      * 
      */
     docview_extension_applicability_level_small = 1,
 
     /**
-     * @brief The extension applies to a bigger amount of documentations then small
+     * @brief The extension applies to a bigger amount of documentations then
+     * small
      * 
      */
     docview_extension_applicability_level_medium = 2,
@@ -162,20 +212,23 @@ enum docview_extension_applicability_level
 };
 
 /**
- * @brief Functions extension must implement
+ * @brief Structure for holding function pointers of an extension
  * 
  */
-struct docview_extension_funcs
+struct docview_extension_functions
 {
 
     /**
      * @brief Returns the applicability level of extension
      * 
-     * @details Extensions must implement this function. This is used determine the
-     * extension calling order. Returning wrong value might cause misbehaviour. See
-     * documentation of enum docview_extension_applicability_level and it's members
-     * for more information.
-     *
+     * @details @rst
+     * 
+     * Extensions must implement this function. This is used determine the
+     * extension calling order. Returning wrong value might cause misbehaviour.
+     * See documentation of enum docview_extension_applicability_level and it's
+     * members for more information.
+     * 
+     * @endrst
      * 
      * @return applicability level of extension
      */
@@ -184,9 +237,13 @@ struct docview_extension_funcs
     /**
      * @brief Returns a pointer to document tree of a path, nullptr on failure
      * 
-     * @details Extensions must implement this function. Note that memory used by
-     * the tree isn't managed by libdocview, it's extension's responsibility to
-     * do and not do that.
+     * @details @rst
+     * 
+     * Extensions must implement this function. Note that memory used by the
+     * tree isn't managed by libdocview, it's extension's responsibility to do
+     * and not do that.
+     * 
+     * @endrst
      * 
      * @param path path to documents
      * 
@@ -197,10 +254,15 @@ struct docview_extension_funcs
     /**
      * @brief Returns the URI or HTML content of document
      * 
-     * @details Extensions must implement this method. This function will return
-     * a struct with a string and a bool. The value bool will true of the value
-     * of the string is a URI, false if the value of the string is HTML. The
-     * pointer to document will be passed to parameter node.
+     * @details @rst
+     * 
+     * Extensions must implement this method. This function will return a struct
+     * with a ``const char*`` and a ``bool``. The value ``bool`` will ``true``
+     * of the ``const char*`` points to a URI, ``false`` if the ``const char*``
+     * points to HTML content. The pointer to document will be passed to
+     * parameter node.
+     * 
+     * @endrst
      * 
      * @param node pointer to a node in document tree
      * 
@@ -211,11 +273,15 @@ struct docview_extension_funcs
     /**
      * @brief Returns the brief of from document
      * 
-     * @details Extensions should implement this method. If an extension doesn't
-     * implement this method, this member must be NULL. This will return the
-     * brief of the the document specified by parameter node. Return value should
-     * be in plain text (although any type of text is allowed). If not implemented,
-     * an empty string will be assumed.
+     * @details @rst
+     * 
+     * Extensions should implement this method. If an extension doesn't
+     * implement this method, this member must be ``NULL``. This will return the
+     * brief of the the document specified by parameter ``node``. Return value
+     * should be in plain text (although any type of text is allowed). If not
+     * implemented, an empty string will be assumed.
+     * 
+     * @endrst
      * 
      * @param node pointer to a node in document tree
      * @return brief of from document
@@ -225,11 +291,15 @@ struct docview_extension_funcs
     /**
      * @brief Returns the details of from document
      * 
-     * @details Extensions should implement this method. If an extension doesn't
-     * implement this method, this member must be NULL. This will return the
-     * details for the document specified by parameter node. Return value should
-     * be in plain text (although any type of text is allowed). If not implemented,
-     * an empty string will be assumed.
+     * @details @rst
+     * 
+     * Extensions should implement this method. If an extension doesn't
+     * implement this method, this member must be ``NULL``. This will return the
+     * details for the document specified by parameter ``node``. Return value
+     * should be in plain text (although any type of text is allowed). If not
+     * implemented, an empty string will be assumed.
+     * 
+     * @endrst
      * 
      * @param node pointer to a node in document tree
      * @return details of from document
@@ -239,11 +309,16 @@ struct docview_extension_funcs
     /**
      * @brief Returns a section from document
      * 
-     * @details Extensions should implement this method. If an extension doesn't
-     * implement this method, this member must be NULL. This will return a section
-     * from the document specified by parameter node. Return value should be in
-     * plain text (although any type of text is allowed).  If not implemented, an
+     * @details @rst
+     * 
+     * Extensions should implement this method. If an extension doesn't
+     * implement this method, this member must be ``NULL``. This will return a
+     * section from the document specified by parameter ``node``. Return value
+     * should be in plain text (although any type of text is allowed). If not
+     * implemented, an
      * empty string will be assumed.
+     * 
+     * @endrst
      * 
      * @param node pointer to a node in document tree
      * @return details of from document
@@ -258,10 +333,14 @@ struct docview_extension_funcs
 typedef void docview_doc_tree_node;
 
 /**
- * @brief Returns a pointer to document tree of a path, NULL on failure
+ * @brief Returns a pointer to document tree of a path, ``NULL`` on failure
  * 
- * @details This function returns a pointer to document tree of a path, nullptr
- * on failure. The pointer returned should not be managed by the application.
+ * @details @rst
+ * 
+ * This function returns a pointer to document tree of a path, ``NULL`` on
+ * failure. The pointer returned should not be freed by the application.
+ * 
+ * @endrst
  * 
  * @param path path to documents
  * 
@@ -272,9 +351,13 @@ docview_doc_tree_node* docview_get_docs_tree(const char* path);
 /**
  * @brief Returns the path or HTML content of document
  * 
- * @details This function will return a pair of a std::string and a bool.
- * The value bool will true of the value of std::string is a path, false
- * if the value of std::string is HTML.
+ * @details @rst
+ * 
+ * This function will return a structure of a ``const char*`` and a ``bool``.
+ * The value ``bool`` will ``true`` of the ``const char*`` points to a URI,
+ * ``false`` if the ``const char*`` points to HTML content.
+ * 
+ * @endrst
  * 
  * @param node pointer to a node in document tree
  * 
@@ -285,9 +368,13 @@ docview_document docview_get_doc(docview_doc_tree_node* node);
 /**
  * @brief Returns the brief of from document
  * 
- * @details This function will return the brief of the the document specified
- * by parameter node. Return value should be in plain text (although any type
+ * @details @rst
+ * 
+ * This function will return the brief of the the document specified by
+ * parameter ``node``. Return value should be in plain text (although any type
  * of text is allowed). May return empty string.
+ * 
+ * @endrst
  * 
  * @param node pointer to a node in document tree
  * @return brief of from document
@@ -295,11 +382,15 @@ docview_document docview_get_doc(docview_doc_tree_node* node);
 const char* docview_get_brief(docview_doc_tree_node* node);
 
 /**
- * @brief Returns the details of from document
+ * @brief Returns the details from document
  * 
- * @details This will return the brief from the document specified by parameter
- * node. Return value should be in plain text (although any type of text is
+ * @details @rst
+ * 
+ * This will will return the details from the document specified by parameter
+ * ``node``. Return value should be in plain text (although any type of text is
  * allowed). May return empty string.
+ * 
+ * @endrst
  * 
  * @param node pointer to a node in document tree
  * @return details of from document
@@ -309,9 +400,13 @@ const char* docview_get_details(docview_doc_tree_node* node);
 /**
  * @brief Returns a section from document
  * 
- * @details This will return a section from the document specified by parameter
- * node. Return value should be in plain text (although any type of text is
- * allowed). May return empty string.
+ * @details @rst
+ * 
+ * This will return a section from the document specified by parameter ``node``.
+ * Return value should be in plain text (although any type of text is allowed).
+ * May return empty string.
+ * 
+ * @endrst
  * 
  * @param node pointer to a node in document tree
  * @return details of from document
@@ -321,10 +416,36 @@ const char* docview_get_section(docview_doc_tree_node* node);
 /**
  * @brief Searches through all loaded document tree
  * 
+ * @details @rst
+ * 
+ * This function searches through the title and synonyms of all nodes of all
+ * document trees (including root nodes). Matches occurs only when title or
+ * any of synonyms follows or matches exactly (e.g. ``abc`` matches with
+ * ``abc``, ``abcabc``, ``abcdef``, but not with ``acb``). Returned vector
+ * does not have any particular order.
+ * 
+ * @endrst
+ * 
  * @param query the search query
  * @return NULL terminated array with nodes of matched documents
  */
 const docview_doc_tree_node* const* docview_search(const char* query);
+
+/**
+ * @brief Checks whether a document node is still valid
+ * 
+ * @details @rst
+ * 
+ * This function checks whether a document node is still valid. A document may
+ * be invalidate because of unloading an extension. It is recommended to
+ * validate one node from every document node tree after unloading an extension.
+ * 
+ * @endrst
+ * 
+ * @param node the node to validate
+ * @return whether a document node is valid
+ */
+bool docview_validate(const docview_doc_tree_node* node);
 
 /**
  * @brief Returns the parent of a document node
@@ -360,19 +481,6 @@ const char* const* docview_doc_tree_node_synonyms(docview_doc_tree_node* node);
  * @return NULL terminated array of children
  */
 const docview_doc_tree_node* const* docview_doc_tree_node_children(docview_doc_tree_node* node);
-
-/**
- * @brief Checks whether a document node is still valid
- * 
- * @details This function checks whether a document node is still valid. A document
- * may be invalidate because of unloading an extension. It is recommended to check
- * all root document node (or one node from a document node tree) after unloading an
- * extension.
- * 
- * @param node the node to validate
- * @return whether a document node is valid
- */
-bool docview_validate(const docview_doc_tree_node* node);
 
 // End of extern "C", only if compiler is a C++ complier
 #ifdef __cplusplus

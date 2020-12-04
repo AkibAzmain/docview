@@ -296,6 +296,34 @@ std::vector<const docview::doc_tree_node*> search_node(const docview::doc_tree_n
     return matches;
 }
 
+// Returns the target of a symbolic link
+std::filesystem::path dereference(std::filesystem::path path)
+{
+
+    // Resolve symlink address
+    while (std::filesystem::exists(path) && std::filesystem::is_symlink(path))
+    {
+
+        // Get the target symbolic link
+        std::filesystem::path sym_path = std::filesystem::read_symlink(path);
+
+        // If target is absolute, assign it to path
+        if (std::string(path)[0] != '/')
+        {
+            path = sym_path;
+        }
+
+        // Otherwise, append it to path's parent with a directory
+        else
+        {
+            path = path.parent_path() / sym_path;
+        }
+    }
+
+    // Return path
+    return path;
+}
+
 // All possible applicability level of an extension
 static std::array<docview::extension::applicability_level, 5> applicability_levels =
 {
@@ -311,6 +339,9 @@ namespace docview
     void load_ext(std::filesystem::path path)
     {
 
+        // Dereference path if required
+        path = dereference(path);
+
         // If extension is already loaded, do nothing
         if(is_loaded(path)) return;
 
@@ -318,37 +349,6 @@ namespace docview
         if (!std::filesystem::exists(path))
             throw std::runtime_error(std::string(path) + " doesn't exist");
 
-        // If path isn't a file but a symlink, dereference it
-        if (!std::filesystem::is_regular_file(path))
-        {
-
-            // Resolve symlink address
-            while (std::filesystem::exists(path) && std::filesystem::is_symlink(path))
-            {
-
-                // Get the target symbolic link
-                std::filesystem::path sym_path = std::filesystem::read_symlink(path);
-
-                // If target is absolute, assign it to path
-                if (std::string(path)[0] != '/')
-                {
-                    path = sym_path;
-                }
-
-                // Otherwise, append it to path's parent with a directory
-                else
-                {
-                    path = path.parent_path() / sym_path;
-                }
-            }
-
-            // If the target isn't a file, throw
-            if (!std::filesystem::exists(path) || !std::filesystem::is_regular_file(path))
-            {
-                throw std::runtime_error(std::string(path) + " doesn't exist or not a file");
-            }
-        }
-        
         // Load the extension file into memory
         loaded_libs.emplace_back(path);
 
@@ -409,6 +409,9 @@ namespace docview
     void unload_ext(std::filesystem::path path)
     {
 
+        // Dereference path if required
+        path = dereference(path);
+
         // Find out the extension to unload
         dl_ptr* lib_to_unload = nullptr;
         for (auto& lib : loaded_libs)
@@ -444,40 +447,12 @@ namespace docview
     const doc_tree_node* get_doc_tree(std::filesystem::path path)
     {
 
+        // Dereference path if required
+        path = dereference(path);
+
         // If path is non-existant, throw exception
         if (!std::filesystem::exists(path))
             throw std::runtime_error(std::string(path) + " doesn't exist");
-
-        // If path is a symlink, dereference it
-        if (std::filesystem::is_symlink(path))
-        {
-
-            // Resolve symlink address
-            while (std::filesystem::exists(path) && std::filesystem::is_symlink(path))
-            {
-
-                // Get the target symbolic link
-                std::filesystem::path sym_path = std::filesystem::read_symlink(path);
-
-                // If target is absolute, assign it to path
-                if (std::string(path)[0] != '/')
-                {
-                    path = sym_path;
-                }
-
-                // Otherwise, append it to path's parent with a directory
-                else
-                {
-                    path = path.parent_path() / sym_path;
-                }
-            }
-
-            // If the target doesn't exist, throw
-            if (!std::filesystem::exists(path))
-            {
-                throw std::runtime_error(std::string(path) + " doesn't exist");
-            }
-        }
 
         // Try to parse with extensions with applicability level from tiny to huge
         for (auto& applicability : applicability_levels)
@@ -505,6 +480,11 @@ namespace docview
 
     bool is_loaded(std::filesystem::path path)
     {
+
+        // Dereference path if required
+        path = dereference(path);
+
+        // Search for path in loaded library, return true or match, false otherwise
         for (unsigned long i = 0; i < loaded_libs.size(); i++)
         {
             if (loaded_libs[i].path == path) return true;
