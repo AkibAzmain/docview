@@ -255,7 +255,6 @@ int main(int argc, char** argv)
 
     // Get pointers to widgets from builder
     auto window = get_widget<Gtk::Window>("window_main");
-    auto doc_contents = get_widget<Gtk::Box>("doc_contents");
     auto contents = get_widget<Gtk::Paned>("contents");
     auto sidebar_toggle_button = get_widget<Gtk::ToggleButton>("sidebar_toggle_button");
     auto about_button = get_widget<Gtk::ModelButton>("about_button");
@@ -544,9 +543,6 @@ int main(int argc, char** argv)
             return;
         }
 
-        // The new stack
-        Gtk::Stack* new_stack = new Gtk::Stack;
-
         // The tab to close
         Gtk::Widget* tab_to_close = stack->get_visible_child();
 
@@ -557,36 +553,10 @@ int main(int argc, char** argv)
             // If the current tab is the tab to close, don't add it and remove it from tabs
             if (tabs[i] == tab_to_close)
             {
+                stack->remove(*tab_to_close);
                 tabs.erase(tabs.begin() + i--);
             }
-            else
-            {
-
-                // Copy the title before reparenting, as trying to acesss it after it will cause errors
-                auto title = stack->child_property_title(*tabs[i]).get_value();
-
-                // Move the tabs and title
-                tabs[i]->reparent(*new_stack);
-                tabs[i]->show();
-                new_stack->child_property_title(*tabs[i]) = title;
-
-                // Give a unique dummy name
-                new_stack->child_property_name(*tabs[i]) = std::to_string(i);
-
-                // Configure event handler
-                stack->child_property_title(*tabs[i]).signal_changed().connect(sigc::mem_fun(
-                    on_title_changed, &std::function<void()>::operator()
-                ));
-            }
         }
-
-        // Copy properties from previous to new stack
-        new_stack->set_transition_duration(stack->get_transition_duration());
-        new_stack->set_transition_type(stack->get_transition_type());
-        new_stack->set_homogeneous(stack->get_homogeneous());
-        new_stack->set_hhomogeneous(stack->get_hhomogeneous());
-        new_stack->set_vhomogeneous(stack->get_vhomogeneous());
-        new_stack->set_interpolate_size(stack->get_interpolate_size());
 
         // If only one tab is left, show only tab title in title
         if (tabs.size() == 1)
@@ -594,25 +564,8 @@ int main(int argc, char** argv)
             title->set_visible_child(*title_label);
         }
 
-        // Swap previous and new stack
-        std::swap(stack, new_stack);
-
-        // Update the tab switcher and window
-        doc_contents->pack_start(*stack);
-        tab_switcher->set_stack(*stack);
+        // Update window
         window->show_all_children();
-
-        // Configure signal handler
-        stack->property_visible_child().signal_changed().connect(sigc::mem_fun(on_active_tab_changed,
-            &std::function<void()>::operator()
-        ));
-
-        // Call the signal handler to handle active tab change, as active tab is changed
-        on_active_tab_changed();
-
-        // Create a shared pointer, which will be destroyed with the previous stack
-        std::shared_ptr<Gtk::Stack> ptr;
-        ptr.reset(new_stack);
     };
 
     // Lambda function to call on webview refresh button clicked
