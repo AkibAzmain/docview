@@ -526,6 +526,23 @@ namespace docview
         return matches;
     }
 
+    std::vector<const doc_tree_node*> search(
+        std::string query,
+        std::vector<std::pair<const docview::doc_tree_node*, std::filesystem::path>> document_roots
+    )
+    {
+        std::vector<const doc_tree_node*> matches;
+
+        // Search through all root nodes and their children
+        for (auto& root_node : document_roots)
+        {
+            std::vector<const doc_tree_node*> found_matches = search_node(root_node.first, query);
+            matches.insert(matches.end(), found_matches.begin(), found_matches.end());
+        }
+
+        return matches;
+    }
+
     bool validate(const doc_tree_node* node)
     {
 

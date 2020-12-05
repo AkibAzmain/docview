@@ -421,8 +421,8 @@ const char* docview_get_section(docview_doc_tree_node* node);
  * This function searches through the title and synonyms of all nodes of all
  * document trees (including root nodes). Matches occurs only when title or
  * any of synonyms follows or matches exactly (e.g. ``abc`` matches with
- * ``abc``, ``abcabc``, ``abcdef``, but not with ``acb``). Returned vector
- * does not have any particular order.
+ * ``abc``, ``abcabc``, ``abcdef``, but not with ``acb``). Returned array does
+ * not have any particular order.
  * 
  * @endrst
  * 

@@ -419,7 +419,7 @@ namespace docview
     std::string section(const doc_tree_node* node) noexcept;
 
     /**
-     * @brief Searches through all loaded document tree
+     * @brief Searches through all loaded document trees
      * 
      * @details @rst
      * 
@@ -435,6 +435,30 @@ namespace docview
      * @return vector with nodes of matched document nodes
      */
     std::vector<const doc_tree_node*> search(std::string query);
+
+    /**
+     * @brief Searches through given document trees
+     * 
+     * @details @rst
+     * 
+     * This function searches through the title and synonyms of all nodes of
+     * given document trees (including root nodes). Matches occurs only when
+     * title or any of synonyms follows or matches exactly (e.g. ``abc`` matches
+     * with ``abc``, ``abcabc``, ``abcdef``, but not with ``acb``). Returned
+     * vector does not have any particular order.
+     * 
+     * .. warning:: This function is deprecated. This was added due to an issue
+     *      during search. This function will be removed eventually.
+     * 
+     * @endrst
+     * 
+     * @param query the search query
+     * @return vector with nodes of matched document nodes
+     */
+    std::vector<const doc_tree_node*> search(
+        std::string query,
+        std::vector<std::pair<const docview::doc_tree_node*, std::filesystem::path>> document_roots
+    );
 
     /**
      * @brief Checks whether a document node is still valid

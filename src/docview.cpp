@@ -676,8 +676,9 @@ int main(int argc, char** argv)
         sidebar_tree->set_model(sidebar_search_results);
 
         // Search through all created document nodes till now
+        // TODO: Use of deprecated function
         std::vector<const docview::doc_tree_node*> matches =
-            docview::search(search_entry->get_text());
+            docview::search(search_entry->get_text(), document_root_nodes);
 
         // Clear the sidebar
         sidebar_search_results->clear();
