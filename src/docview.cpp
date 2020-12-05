@@ -425,7 +425,7 @@ int main(int argc, char** argv)
     {
 
         // Iterator to the row
-        Gtk::TreeModel::iterator it = sidebar_contents->get_iter(path);
+        Gtk::TreeModel::iterator it = sidebar_tree->get_model()->get_iter(path);
 
         // Make sure the iterator is valid
         if (path)
