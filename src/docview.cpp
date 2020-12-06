@@ -301,7 +301,7 @@ int main(int argc, char** argv)
     Glib::RefPtr<Gtk::TreeStore> sidebar_contents;
 
     // This structure contains search results of sidebar
-    Glib::RefPtr<Gtk::TreeStore> sidebar_search_results;
+    Glib::RefPtr<Gtk::ListStore> sidebar_search_results;
 
     // Column of sidebar tree holding title
     Gtk::TreeModelColumn<Glib::ustring> sidebar_column_title;
@@ -1145,7 +1145,7 @@ int main(int argc, char** argv)
     sidebar_columns.add(sidebar_column_title);
     sidebar_columns.add(sidebar_column_node);
     sidebar_contents = Gtk::TreeStore::create(sidebar_columns);
-    sidebar_search_results = Gtk::TreeStore::create(sidebar_columns);
+    sidebar_search_results = Gtk::ListStore::create(sidebar_columns);
     sidebar_tree->set_model(sidebar_contents);
     sidebar_tree->append_column("title", sidebar_column_title);
 
