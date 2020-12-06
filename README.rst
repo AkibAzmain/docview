@@ -34,7 +34,7 @@ License
 -------
 
 Docview is licensed under GNU GPLv3 (which can be found in the
-[LICENSE](blob/master/LICENSE) file), but the supporting library libdocview is
+`LICENSE <blob/master/LICENSE>`_ file), but the supporting library libdocview is
 licensed under GNU LGPLv3 (which can found at `src/libdocview/LICENSE
 <blob/master/src/libdocview/LICENSE>`_. All files under directory
 `src/libdocview <blob/master/src/libdocview)>`_ are part of libdocview
