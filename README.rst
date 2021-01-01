@@ -5,6 +5,8 @@ Docview
     :target: https://docview.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
+**This repository has been moved to GitLab (<https://gitlab.com/AkibAzmain/docview/>).**
+
 Docview is an extensible documentation viewer which can show documentation in a
 variety of formats. It is extensible with extensions, so it's possible to view
 almost any type of documentation in a single application.
